@@ -15,14 +15,13 @@
     "utilities",
     "react-utilities",
     "ssbdev"
-  ]
+  ],
   "scripts": {
     "build": "npm run clean && tsc && npm run build:CSS ",
     "clean": "rm -rf build",
     "build:CSS": "gulp buildCSS",
     "test": "jest --watchAll --no-cache"
   },
-  "keywords": [],
   "author": "Sanath Sharma",
   "homepage": "https://github.com/sanathsharma/react-web-utilities",
   "repository": {
