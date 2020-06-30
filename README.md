@@ -40,7 +40,7 @@ Option Name | Type | Default | Required (or) Optional | Description
 -------------|-------|---------|-----------------------|-----------
 apiBase | `string` | `undefined` | Required | baseURL for axios
 defaultTimeout | `number` | `10000`| Optional | Request Timeout. `0` -> infinite
-getToken | `() => string | undefined` | `undefined` | Optional | A function that returns a token string that is attached to **Authorization** header with *bearer*. i.e, `Bearer <token>`
+getToken | `() => string \| undefined` | `undefined` | Optional | A function that returns a token string that is attached to **Authorization** header with *bearer*. i.e, `Bearer <token>`
 onResponseError | `( error: AxiosError ) => void` | `undefined`| Optional | CallBack that can be used to update / make ui changes based on errors
 
 #### Basic usage
@@ -363,7 +363,7 @@ errorCondition | `boolean` | `false` | Optional |  boolean or expression that ev
 loadingPlaceholder | `React.ComponentType<any>` | `undefined` | Required | Component to rendered if loading is true. Constructor of component. i.e, `LoaderComponent` instead of `<LoaderComponent />`
 multiplier | `number` | `1` | Optional | The number of placeholders to be rendered
 errorPlaceholder | `React.ReactNode` | `undefined` | Optional | Component to rendered if error occurs. Instance of a component, unlike **loadingPlaceholder**. i.e, `<Retry onClick={ ... } />` instead of `Retry`
-children | `React.ReactNodeArray | React.ReactNode` | `undefined` | Optional | The actual component(s) that will be rendered when the condition evaluates to `true`
+children | `React.ReactNodeArray \| React.ReactNode` | `undefined` | Optional | The actual component(s) that will be rendered when the condition evaluates to `true`
 initialDelay | `number` | `0` | Optional | Minimum time (in milliseconds) before a component is rendered
 
 #### Basic usage
