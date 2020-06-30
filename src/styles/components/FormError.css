@@ -1,0 +1,22 @@
+.error-msg {
+    display: block;
+
+    color: red;
+    font-size: inherit;
+}
+
+.error-msg.align-start {
+    text-align: start;
+}
+
+.error-msg.align-center {
+    text-align: center;
+}
+
+.error-msg.align-end {
+    text-align: end;
+}
+
+.unselectable {
+    user-select: none;
+}

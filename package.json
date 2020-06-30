@@ -1,0 +1,57 @@
+{
+  "name": "@ssbdev/react-web-utilities",
+  "version": "0.0.1",
+  "description": "React utility library with handy hooks, components, helper functions.",
+  "main": "./build/index.js",
+  "types": "./build/index.d.ts",
+  "files": [
+    "build",
+    "./README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "npm run clean && tsc && npm run build:CSS ",
+    "clean": "rm -rf build",
+    "build:CSS": "gulp buildCSS",
+    "test": "jest --watchAll --no-cache"
+  },
+  "keywords": [],
+  "author": "Sanath Sharma",
+  "homepage": "https://github.com/sanathsharma/react-web-utilities",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sanathsharma/react-web-utilities"
+  },
+  "license": "MIT",
+  "browserslist": [
+    ">0.01%",
+    "not dead"
+  ],
+  "dependencies": {
+    "axios": "^0.19.2",
+    "lodash": "^4.17.15",
+    "react": "^16.13.1",
+    "react-router-dom": "^5.2.0",
+    "yup": "^0.29.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^5.11.0",
+    "@testing-library/react": "^10.4.3",
+    "@testing-library/user-event": "^12.0.11",
+    "@types/jest": "^26.0.3",
+    "@types/lodash": "^4.14.157",
+    "@types/node": "^14.0.14",
+    "@types/react-router-dom": "^5.1.5",
+    "@types/yup": "^0.29.3",
+    "autoprefixer": "^9.8.4",
+    "cssnano": "^4.1.10",
+    "gulp": "^4.0.2",
+    "gulp-clean-css": "^4.3.0",
+    "gulp-postcss": "^8.0.0",
+    "gulp-rename": "^2.0.0",
+    "jest": "^26.1.0",
+    "react-dom": "^16.13.1",
+    "ts-jest": "^26.1.1",
+    "typescript": "^3.9.5"
+  }
+}

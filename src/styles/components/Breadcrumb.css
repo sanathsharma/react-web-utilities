@@ -1,0 +1,14 @@
+.breadcrumb {
+    display: flex;
+    flex-direction: row;
+    font-size: inherit;
+}
+
+.breadcrumb--anchor {
+    text-decoration: none;
+}
+
+.breadcrumb--active {
+    color: #000;
+    font-weight: bold;
+}
