@@ -9,6 +9,13 @@
     "./README.md",
     "LICENSE"
   ],
+  "keywords": [
+    "react-web-utilities",
+    "react",
+    "utilities",
+    "react-utilities",
+    "ssbdev"
+  ]
   "scripts": {
     "build": "npm run clean && tsc && npm run build:CSS ",
     "clean": "rm -rf build",

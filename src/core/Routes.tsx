@@ -141,6 +141,7 @@ const Routes = ( props: RoutesProps ) => {
                             </Fragment>
                         );
                     } }
+                    { ...rest }
                 />;
                 return (
                     <Route

@@ -116,7 +116,7 @@ const createBreadcrumb = ( options: createBreadcrumbOptions ): React.FC<Breadcru
                 displayContent.push(
                     <Fragment key={ key }>
                         {
-                            active
+                            !active
                                 ? (
                                     <NavLink
                                         to={ href }
