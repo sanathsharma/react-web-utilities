@@ -448,7 +448,7 @@ option | Type | Default | Required (or) Optional | Description
 method | `( ...args: any ) => Promise<any>` | `undefined` | Required | Reference to the function which returns a Promise
 args | `Parameters<method>` | `undefined` | Required | Arguments to the function refered for "method"
 dependencies | `any[]` | `[]` | Optional | Refetch based on dependency value change, **useEffect** dependency array
-normalize | `boolean | string` | false | Optional | normalizes based on the key provided. `true` -> normalizes by "id" (or) `false` -> directly sets data with the response data (or) `"somekey"` -> normalizes by "somekey"
+normalize | `boolean \| string` | `false` | Optional | normalizes based on the key provided. `true` -> normalizes by "id" (or) `false` -> directly sets data with the response data (or) `"somekey"` -> normalizes by "somekey"
 onError | `( e: AxiosError ) => void` | `undefined` | Optional | Callback that gets called on api request gets rejected with an error
 condition | `boolean` | `true` | Optional | Condition to fetch. `true` -> make the api request on fetch Call (or) `false` -> donnot make api request on fetch call
 
@@ -604,7 +604,7 @@ prop name | Type | Default | Required (or) Optional | Description
 --------|-------|---------|--------------------------|--------------
 touched | `boolean` | `undefined` | Optional | Boolean which tells whether the form field for focused or not
 error | `string` | `undefined` | Optional | String which contains error message
-align | `"start" | "center" | "end"` | `"start"` | Optional | allignment of the error message
+align | `"start" \| "center" \| "end"` | `"start"` | Optional | allignment of the error message
 
 #### Basic usage
 ```js
