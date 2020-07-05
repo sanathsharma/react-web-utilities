@@ -75,7 +75,10 @@ const createFormError = ( options: createFormErrorOptions ): React.FC<FormErrorP
             <>
                 {
                     touched && error && (
-                        <span className={ `error-msg align-${align} unselectable` }>
+                        <span
+                            data-testid="error-msg"
+                            className={ `error-msg align-${align} unselectable` }
+                        >
                             { icon }
                             { error }
                         </span>

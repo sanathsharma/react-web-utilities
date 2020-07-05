@@ -43,10 +43,12 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^5.11.0",
     "@testing-library/react": "^10.4.3",
+    "@testing-library/react-hooks": "^3.3.0",
     "@testing-library/user-event": "^12.0.11",
     "@types/jest": "^26.0.3",
     "@types/lodash": "^4.14.157",
     "@types/node": "^14.0.14",
+    "@types/react-dom": "^16.9.8",
     "@types/react-router-dom": "^5.1.5",
     "@types/yup": "^0.29.3",
     "autoprefixer": "^9.8.4",
@@ -57,6 +59,7 @@
     "gulp-rename": "^2.0.0",
     "jest": "^26.1.0",
     "react-dom": "^16.13.1",
+    "react-test-renderer": "^16.13.1",
     "ts-jest": "^26.1.1",
     "typescript": "^3.9.5"
   }

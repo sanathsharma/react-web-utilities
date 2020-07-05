@@ -47,6 +47,11 @@ export interface createBreadcrumbOptions {
      * @default "breadcrumb--anchor"
      */
     inactiveLinkClass?: string;
+    /**
+     * ClassName given for each seperator icon-wrapper
+     * @default "breadcrumb--icon-wrapper"
+     */
+    iconWrapperClass?: string;
 }
 
 export interface BreadcrumbProps {
@@ -61,6 +66,15 @@ export interface BreadcrumbProps {
      */
     icon?: React.ReactNode;
 }
+
+// ---------------------------------------------------------------------------------------------
+
+const BREADCRUMB_WRAPPER_CLASS = "breadcrumb";
+const BREADCRUMB_ACTIVE_LINK_CLASS = "breadcrumb--active";
+const BREADCRUMB_INACTIVE_LINK_CLASS = "breadcrumb--anchor";
+const BREADCRUMB_SEPERATOR_WRAPPER = "breadcrumb--icon-wrapper";
+
+// ---------------------------------------------------------------------------------------------
 
 /**
  * Create "Breadcrumb" navigation component, that can be instantiated elsewhere.
@@ -92,8 +106,9 @@ export interface BreadcrumbProps {
 const createBreadcrumb = ( options: createBreadcrumbOptions ): React.FC<BreadcrumbProps> => {
     const {
         defaultIcon,
-        activeLinkClass = "breadcrumb--active",
-        inactiveLinkClass = "breadcrumb--anchor"
+        activeLinkClass = BREADCRUMB_ACTIVE_LINK_CLASS,
+        inactiveLinkClass = BREADCRUMB_INACTIVE_LINK_CLASS,
+        iconWrapperClass = BREADCRUMB_SEPERATOR_WRAPPER
     } = options;
 
     return ( props ) => {
@@ -133,9 +148,11 @@ const createBreadcrumb = ( options: createBreadcrumbOptions ): React.FC<Breadcru
                 // if not the last element
                 if ( crumbs.length !== index + 1 ) {
                     displayContent.push(
-                        <Fragment key={ `${key}_seperator` }>
+                        <span
+                            key={ `${key}_seperator` }
+                            className={ iconWrapperClass }>
                             { icon }
-                        </Fragment>
+                        </span>
                     );
                 }
             } );
@@ -144,7 +161,7 @@ const createBreadcrumb = ( options: createBreadcrumbOptions ): React.FC<Breadcru
         };
 
         return (
-            <div className="breadcrumb">
+            <div className={ BREADCRUMB_WRAPPER_CLASS }>
                 { renderCrumbs() }
             </div>
         );
@@ -154,5 +171,9 @@ const createBreadcrumb = ( options: createBreadcrumbOptions ): React.FC<Breadcru
 // ---------------------------------------------------------------------------------------------
 
 export {
-    createBreadcrumb
+    createBreadcrumb,
+    BREADCRUMB_WRAPPER_CLASS,
+    BREADCRUMB_ACTIVE_LINK_CLASS,
+    BREADCRUMB_INACTIVE_LINK_CLASS,
+    BREADCRUMB_SEPERATOR_WRAPPER,
 };

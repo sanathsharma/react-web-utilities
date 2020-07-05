@@ -1,7 +1,11 @@
 .breadcrumb {
+    font-size: inherit;
+    font-style: inherit;
+
     display: flex;
     flex-direction: row;
-    font-size: inherit;
+    align-items: center;
+    padding: 0.5rem;
 }
 
 .breadcrumb--anchor {
@@ -10,5 +14,13 @@
 
 .breadcrumb--active {
     color: #000;
-    font-weight: bold;
+    font-weight: 500;
+}
+
+.breadcrumb--icon-wrapper {
+    font-size: 0.7em;
+    width: fit-content;
+    height: fit-content;
+    padding: 0 0.5rem;
+    color: rgba(0, 0, 0, 0.4);
 }

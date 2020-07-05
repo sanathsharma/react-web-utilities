@@ -1,5 +1,5 @@
 # react-web-utilities
-## Version 0.0.1
+## Version 0.1.0
 
 React utility library with handy hooks, components, helper functions.
 
@@ -38,31 +38,33 @@ Builds a axios instance.
 
 Option Name | Type | Default | Required (or) Optional | Description 
 -------------|-------|---------|-----------------------|-----------
-apiBase | `string` | `undefined` | Required | baseURL for axios
-defaultTimeout | `number` | `10000`| Optional | Request Timeout. `0` -> infinite
-getToken | `() => string \| undefined` | `undefined` | Optional | A function that returns a token string that is attached to **Authorization** header with *bearer*. i.e, `Bearer <token>`
+getToken | <code>() => string &#124; undefined</code> | `undefined` | Optional | A function that returns a token string that is attached to **Authorization** header with *bearer*. i.e, `Bearer <token>`
 onResponseError | `( error: AxiosError ) => void` | `undefined`| Optional | CallBack that can be used to update / make ui changes based on errors
+custom | `{ [name: string]: ( ( this: AxiosInstance, ...args: any ) => any ) | string | number | any[] | undefined | null> }` | `{}` | Optional | adds addition methods and properties on client (axios intance)
+...rest | `AxiosRequestConfig` | - | - | axios request configuration
 
 #### Basic usage
 
 Without token,
 ```js
-const Client = new buildClient( {
-    apiBase: "http://localhost:8000"
+const Client = buildClient( {
+    baseURL: "http://localhost:8000"
 } );
 
 // ...
 
 Client.put(
+    // url
     "/api/books",
-    // body
+    // data
     {
         title: "Update title",
         desc: "Updated description"
     },
-    // params
+    // config
     {
-        bookId: 21
+    // params
+        params: { bookId: 21 }
     }
 ).then( res => {
     // then block
@@ -88,8 +90,8 @@ code,
 import { buildClient } from "@ssbdev/react-web-utilities";
 // ...
 
-const Client = new buildClient( {
-    apiBase: "http://localhost:8000",
+const Client = buildClient( {
+    baseURL: "http://localhost:8000",
     getToken() {
         return localStorage.getItem( "token" )
     },
@@ -116,13 +118,16 @@ export default () => {
     const [data, setData] = useState( [] );
 
     useEffect( () => {
-        Client.post("/api/books", { title: "MyBook", price: 100 } )
-            .then( res => {
-                setData( res.data );
-            } )
-            .catch( e => {
-                console.log( "ERROR:", e );
-            } )
+        Client.post(
+            // url
+            "/api/books", 
+            // data
+            { title: "MyBook", price: 100 }
+        ) .then( res => {
+            setData( res.data );
+        } ).catch( e => {
+            console.log( "ERROR:", e );
+        } )
     } , [] )
 
 // ...
@@ -130,49 +135,41 @@ export default () => {
 ```
 
 #### Advance Usage
-Extend the buildClient class to add custom methods and properties
+Adding custom methods and properties. **"this"** inside a custom method points to **axios instance**
 ```js
 // api.service.js
 // ...
 import { buildClient } from "@ssbdev/react-web-utilities";
 // ...
 
-class ExtendedClient extends buildClient {
-    constructor( options, staticBase ) { // options: IBuildClientOptions
-        super( options );
-
-        this._staticBase = staticBase;
-    }
-
-    getStaticBase = () => {
-        return this._staticBase;
-    }
-
-    upload = ( 
-        method, // "post" | "put"
-        url, // string
-        data = {}, // any
-        params = {} // Record<string, any>
-    ) => {
-        return this.instance( {
-            method,
-            url,
+const Client = buildClient({
+    baseURL: "http://localhost:8000",
+    custom: {
+        getStaticBase() {
+            return this.defaults.baseURL + "/static";
+        },
+        upload(
+            method, // "post" | "put"
+            url, 
             data,
-            params,
-            timeout: 0, // infinite
-            onUploadProgress ( e ) { // e: ProgressEvent
-                const progress = ( e.loaded / e.total ) * 100;
-                // logic to indicate the progress on the ui
-                // ...
-            }
-        } );
-    };
-}
+            config // AxiosRequestConfig
+        ) {
+            return this[method]( url, data, {
+                timeout: 0,
+                onUploadProgress ( e ) { // e: ProgressEvent
+                    const progress = ( e.loaded / e.total ) * 100;
+                    // logic to indicate the progress on the ui
+                    // ...
+                },
+                ...config
+            } )l
+        }
+    }
+} );
 
-const Client = new ExtendedClient( {
-    // options
-    // ...
-}, "http://localhost:8000/static );
+export {
+    Client
+}
 // ...
 ```
 
@@ -363,7 +360,7 @@ errorCondition | `boolean` | `false` | Optional |  boolean or expression that ev
 loadingPlaceholder | `React.ComponentType<any>` | `undefined` | Required | Component to rendered if loading is true. Constructor of component. i.e, `LoaderComponent` instead of `<LoaderComponent />`
 multiplier | `number` | `1` | Optional | The number of placeholders to be rendered
 errorPlaceholder | `React.ReactNode` | `undefined` | Optional | Component to rendered if error occurs. Instance of a component, unlike **loadingPlaceholder**. i.e, `<Retry onClick={ ... } />` instead of `Retry`
-children | `React.ReactNodeArray \| React.ReactNode` | `undefined` | Optional | The actual component(s) that will be rendered when the condition evaluates to `true`
+children | <code>React.ReactNodeArray &#124; React.ReactNode</code> | `undefined` | Optional | The actual component(s) that will be rendered when the condition evaluates to `true`
 initialDelay | `number` | `0` | Optional | Minimum time (in milliseconds) before a component is rendered
 
 #### Basic usage
@@ -448,9 +445,11 @@ option | Type | Default | Required (or) Optional | Description
 method | `( ...args: any ) => Promise<any>` | `undefined` | Required | Reference to the function which returns a Promise
 args | `Parameters<method>` | `undefined` | Required | Arguments to the function refered for "method"
 dependencies | `any[]` | `[]` | Optional | Refetch based on dependency value change, **useEffect** dependency array
-normalize | `boolean \| string` | `false` | Optional | normalizes based on the key provided. `true` -> normalizes by "id" (or) `false` -> directly sets data with the response data (or) `"somekey"` -> normalizes by "somekey"
+normalize | <code>boolean &#124; string</code> | `false` | Optional | normalizes based on the key provided. `true` -> normalizes by "id" (or) `false` -> directly sets data with the response data (or) `"somekey"` -> normalizes by "somekey"
 onError | `( e: AxiosError ) => void` | `undefined` | Optional | Callback that gets called on api request gets rejected with an error
 condition | `boolean` | `true` | Optional | Condition to fetch. `true` -> make the api request on fetch Call (or) `false` -> donnot make api request on fetch call
+defaultData | `any` | `null` | Optional | Default state of **data**
+transformResData | `( data: any ) => any` | `undefined` | Optional | Transform the response data before storing it the "data" state. Whatever is returned by the function is set to "data". It can also return a **promise**. ***Note:*** if normalize is true (or) "somekey", then normalized data is avaliable in the params instead of response data
 
 #### Return object
 
@@ -525,19 +524,19 @@ Constructor that create a set of strings that can be used as Redux Action Types.
 // ...
 const BOOKS = new ReduxActionConstants( "books" );
 
-console.log( Books );
+console.log( BOOKS );
 // output
 // {
-//     ENTITY: "BOOKS";
-//     INSERT: "[BOOKS] INSERT";
-//     UPDATE: "[BOOKS] UPDATE";
-//     REMOVE: "[BOOKS] REMOVE";
-//     BULK_INSERT: "[BOOKS] BULK_INSERT";
-//     BULK_UPDATE: "[BOOKS] BULK_UPDATE";
-//     BULK_REMOVE: "[BOOKS] BULK_REMOVE";
-//     SET: "[BOOKS] SET";
-//     UNSET: "[BOOKS] UNSET";
-//     RESET: "[BOOKS] RESET";
+//     ENTITY: "BOOKS",
+//     INSERT: "[BOOKS] INSERT",
+//     UPDATE: "[BOOKS] UPDATE",
+//     REMOVE: "[BOOKS] REMOVE",
+//     BULK_INSERT: "[BOOKS] BULK_INSERT",
+//     BULK_UPDATE: "[BOOKS] BULK_UPDATE",
+//     BULK_REMOVE: "[BOOKS] BULK_REMOVE",
+//     SET: "[BOOKS] SET",
+//     UNSET: "[BOOKS] UNSET",
+//     RESET: "[BOOKS] RESET"
 // }
 
 const reducer_setBooks = ( books ) => ( {
@@ -604,7 +603,7 @@ prop name | Type | Default | Required (or) Optional | Description
 --------|-------|---------|--------------------------|--------------
 touched | `boolean` | `undefined` | Optional | Boolean which tells whether the form field for focused or not
 error | `string` | `undefined` | Optional | String which contains error message
-align | `"start" \| "center" \| "end"` | `"start"` | Optional | allignment of the error message
+align | <code>"start" &#124; "center" &#124; "end"</code> | `"start"` | Optional | allignment of the error message
 
 #### Basic usage
 ```js
@@ -650,6 +649,7 @@ option | Type | Default | Required (or) Optional | Description
 defaultIcon | `React.ReactNode` | `undefined` | Required | icon node.
 activeLinkClass | `string` | `"breadcrumb--active"` | Optional | ClassName given to active crumb link
 inactiveLinkClass | `string` | `"breadcrumb--anchor"` | Optional | ClassName given to inactive crumb link
+iconWrapperClass | `string` | `"breadcrumb--icon-wrapper"` | Optional |ClassName given for each seperator icon-wrapper
 
 Example for `icon` option,
 ```html
@@ -657,6 +657,26 @@ Example for `icon` option,
 <i className="fa fa-exclamation-triangle" aria-hidden="true"></i>
 <!-- material icons -->
 <span class="material-icons">warning</span>
+```
+
+Custom styles - Append to **existing classes** as shown below (or) provide **override classes** in the options
+
+```css
+.breadcrumb {
+    /* your styles here */
+}
+
+.breadcrumb--anchor {
+    /* your styles here */
+}
+
+.breadcrumb--active {
+    /* your styles here */
+}
+
+.breadcrumb--icon-wrapper {
+    /* your styles here */
+}
 ```
 
 #### Breadcrumb props

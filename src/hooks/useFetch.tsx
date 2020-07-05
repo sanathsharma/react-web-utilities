@@ -9,6 +9,7 @@ import { Fetched } from "../constants/interfaces";
 
 // helpers
 import { normalize as normalizeFn } from "../helpers/normailze";
+import { isPromise } from "../helpers/isPromise";
 
 // --------------------------------------------------------------------------------------------
 
@@ -39,6 +40,13 @@ export interface useFetchOptions<Fn extends ( ...args: any ) => Promise<any>> {
      */
     normalize?: boolean | string,
     /**
+     * Transform the response data before storing it the "data" state.
+     * Whatever is returned by the function is set to "data". It can also return a **promise**.
+     * - **Note:** if normalize is true|"somekey", 
+     * then normalized data is avaliable in the params instead of response data
+     */
+    transformResData?: ( data: any ) => any;
+    /**
      * Callback that gets called on api request gets rejected with an error
      * @default undefined
      */
@@ -50,6 +58,16 @@ export interface useFetchOptions<Fn extends ( ...args: any ) => Promise<any>> {
      * @default true
      */
     condition?: boolean;
+    /**
+     * Default state of "data"
+     * @default null
+     */
+    defaultData?: any;
+    /**
+     * Default state of "fetched"
+     * @default "FALSE"
+     */
+    defaultFetched?: Fetched;
 }
 
 export interface useFetchReturnType<D extends any = any> {
@@ -71,8 +89,9 @@ export interface useFetchReturnType<D extends any = any> {
     /**
      * Function to make the api call.
      * General usecase is to call this function on retry if initial api request fails (fetched="ERROR")
+     * @param force (`boolean`) force api hit even if `condition` is false
      */
-    fetch: () => void;
+    fetch: ( force?: boolean ) => void;
 }
 
 // --------------------------------------------------------------------------------------------
@@ -91,29 +110,38 @@ const useFetch = <
         args,
         dependencies = [],
         normalize = false,
+        transformResData,
         onError,
-        condition = true
+        condition = true,
+        defaultData = null,
+        defaultFetched = "FALSE"
     } = options;
 
-    const [data, setData] = useState<D | null>( null );
-    const [fetched, setFetched] = useState<Fetched>( "FALSE" );
+    const [data, setData] = useState<D | null>( defaultData );
+    const [fetched, setFetched] = useState<Fetched>( defaultFetched );
 
-    const fetch = () => {
-        if ( !condition ) return;
+    const fetch = async ( force = false ) => {
+        if ( !condition && !force ) return;
 
         setFetched( "FETCHING" );
-        method( ...args )
-            .then( res => {
-                let data = res.data;
-                if ( normalize ) data = normalizeFn( data, typeof normalize === "string" ? normalize : undefined );
 
-                setData( data );
-                setFetched( "TRUE" );
-            } )
-            .catch( ( e: AxiosError ) => {
-                onError?.( e );
-                setFetched( "ERROR" );
-            } );
+        try {
+            let { data } = await method( ...args );
+
+            if ( normalize ) data = normalizeFn( data, typeof normalize === "string" ? normalize : undefined );
+            if ( typeof transformResData === "function" ) {
+                data = transformResData( data );
+
+                // if promise is returned
+                if ( isPromise( data ) ) data = await data;
+            }
+
+            setData( data );
+            setFetched( "TRUE" );
+        } catch ( e ) {
+            onError?.( e );
+            setFetched( "ERROR" );
+        }
     };
 
     useEffect( () => {
@@ -122,8 +150,8 @@ const useFetch = <
 
     useEffect( () => {
         return () => {
-            setData( null );
-            setFetched( "FALSE" );
+            setData( defaultData );
+            setFetched( defaultFetched );
         };
     }, [] );
 

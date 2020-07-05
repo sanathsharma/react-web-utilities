@@ -5,3 +5,4 @@ export * from "./normailze";
 export * from "./other";
 export * from "./yupValidate";
 export * from "./yupValidateAt";
+export * from "./isPromise";

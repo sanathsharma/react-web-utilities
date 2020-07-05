@@ -1,4 +1,4 @@
-import Axios from 'axios';
+import Axios, { AxiosRequestConfig } from 'axios';
 
 // ---------------------------------------------------------------------------------------
 
@@ -16,12 +16,7 @@ export type AxiosResponse<T = any> = import( "axios" ).AxiosResponse<T>;
 export type AxiosInstance = import( "axios" ).AxiosInstance;
 
 // ---------------------------------------------------------------------------------------
-export interface IBuildClientOptions {
-    /**
-     * baseURL for axios
-     * @default undefined
-     */
-    apiBase: string;
+export interface IBuildClientOptions extends AxiosRequestConfig {
     /**
      * A function that returns a token string that is attached to 
      * Authorization header with bearer ( i.e, `Bearer <token>` )
@@ -43,24 +38,28 @@ export interface IBuildClientOptions {
      * ```
      */
     onResponseError?: ( error: AxiosError ) => void;
+}
+
+// TODO: rename custom, update readme, changelog, update above extension example
+interface OtherOptions<
+    C extends Record<string, ( ( this: AxiosInstance, ...args: any ) => any ) | string | number | any[] | undefined | null>
+    > {
     /**
-     * Request Timeout
-     * - 0 -> infinite
-     * @default 10000
+     * custom methods and properties on client
      */
-    defaultTimeout?: number;
+    custom?: C;
 }
 
 // ---------------------------------------------------------------------------------------
 
 /**
- * - Basic usage example
+ * - Small wrapper on axios.create
  * @example
  * ```js
  * // api.service.js
  * // ...
- * const Client = new buildClient( {
- *     apiBase: "http://localhost:8000",
+ * const Client = buildClient( {
+ *     baseURL: "http://localhost:8000",
  *     getToken() {
  *         return localStorage.getItem( "token" )
  *     },
@@ -83,168 +82,104 @@ export interface IBuildClientOptions {
  *     const [data, setData] = useState( [] );
  * 
  *     useEffect( () => {
- *         Client.post("/api/books", { title: "MyBook", price: 100 } )
- *             .then( res => {
- *                 setData( res.data );
- *             } )
- *             .catch( e => {
- *                 console.log( "ERROR:", e );
- *             } )
+ *         Client.post(
+ *             // url
+ *             "/api/books",
+ *             // data
+ *             { title: "MyBook", price: 100 }
+ *         ) .then( res => {
+ *             setData( res.data );
+ *         } ).catch( e => {
+ *             console.log( "ERROR:", e );
+ *         } )
  *     } , [] )
  * 
  * // ...
  * }
  * ```
  * 
- * - Example for extending the usage
+ * - Example for custom methods and properties
  * @example
  * ```js
  * // api.service.js
  * // ...
- * class ExtendedClient extends buildClient {
- *     constructor( options ) { // options: IBuildClientOptions
- *         super( options );
- *     }
+ * import { buildClient } from "@ssbdev/react-web-utilities";
+ * // ...
  * 
- *     upload = ( 
- *         method, // "post" | "put"
- *         url, // string
- *         data = {}, // any
- *         params = {} // Record<string, any>
- *     ) => {
- *         return this.instance( {
- *             method,
+ * const Client = buildClient({
+ *     baseURL: "http://localhost:8000",
+ *     custom: {
+ *         getStaticBase() {
+ *             return this.defaults.baseURL + "/static";
+ *         },
+ *         upload(
+ *             method, // "post" | "put"
  *             url,
  *             data,
- *             params,
- *             timeout: 0, // infinite
- *             onUploadProgress ( e ) { // e: ProgressEvent
- *                 const progress = ( e.loaded / e.total ) * 100;
- *                 // logic to indicate the progress on the ui
- *                 // ...
- *             }
- *         } );
- *     };
- * }
- * 
- * const Client = new ExtendedClient( {
- *     // options
- *     // ...
+ *             config // AxiosRequestConfig
+ *         ) {
+ *             return this[method]( url, data, {
+ *                 timeout: 0,
+ *                 onUploadProgress ( e ) { // e: ProgressEvent
+ *                     const progress = ( e.loaded / e.total ) * 100;
+ *                     // logic to indicate the progress on the ui
+ *                     // ...
+ *                 },
+ *                 ...config
+ *             } )l
+ *         }
+ *     }
  * } );
- * // ...
+ * 
+ * export {
+ *     Client
+ * }
  * ```
  */
-class buildClient {
-    private _apiBase: string;
-    private axios: AxiosInstance;
-    private timeout: number;
 
-    constructor( options: IBuildClientOptions ) {
-        const {
-            apiBase,
-            getToken,
-            onResponseError,
-            defaultTimeout = 10000
-        } = options;
+const buildClient = function <
+    C extends Record<string, ( ( this: AxiosInstance, ...args: any ) => any ) | string | number | any[] | undefined | null>
+> ( options: IBuildClientOptions & OtherOptions<C> ): AxiosInstance & C {
+    const {
+        getToken,
+        onResponseError,
+        custom,
+        ...rest
+    } = options;
 
-        // initializations
-        this._apiBase = apiBase;
-        this.timeout = defaultTimeout;
+    const instance = Axios.create( rest );
 
-        // axios instance
-        this.axios = Axios.create( {
-            baseURL: this._apiBase,
-            timeout: this.timeout
-        } );
+    // configurations
+    // instance.defaults.headers.common["Content-Type"] = "application/json";
+    instance.defaults.headers.post["Content-Type"] = "application/json";
 
-        // configurations
-        // this.axios.defaults.headers.common["Content-Type"] = "application/json";
-        this.axios.defaults.headers.post["Content-Type"] = "application/json";
+    // attaching token to request body
+    if ( typeof getToken === "function" )
+        instance.interceptors.request.use(
+            ( req ) => {
+                let token = getToken();
+                req['headers']['Authorization'] = token ? `Bearer ${token}` : '';
+                return req;
+            },
+            ( e ) => {
+                return Promise.reject( e );
+            }
+        );
 
-        // attaching token to request body
-        if ( typeof getToken === "function" )
-            this.axios.interceptors.request.use(
-                ( req ) => {
-                    let token = getToken();
-                    req['headers']['Authorization'] = token ? `Bearer ${token}` : '';
-                    return req;
-                },
-                ( e ) => {
-                    return Promise.reject( e );
-                }
-            );
+    // errorhandling
+    if ( typeof onResponseError === "function" )
+        instance.interceptors.response.use(
+            ( res ) => {
+                return res;
+            },
+            ( e ) => {
+                onResponseError( e );
+                return Promise.reject( e );
+            }
+        );
 
-        // errorhandling
-        if ( typeof onResponseError === "function" )
-            this.axios.interceptors.response.use(
-                ( res ) => {
-                    return res;
-                },
-                ( e ) => {
-                    onResponseError( e );
-                    return Promise.reject( e );
-                }
-            );
-    }
-
-    get apiBase () {
-        return this._apiBase;
-    }
-
-    get = ( url: string, params: Record<string, any> = {}, timeout?: number ) => {
-        return this.axios( {
-            method: 'get',
-            url,
-            params,
-            timeout: timeout ?? this.timeout
-        } );
-    };
-
-    post = ( url: string, data: any = {}, params: Record<string, any> = {}, timeout?: number ) => {
-        return this.axios( {
-            method: 'post',
-            url,
-            data,
-            params,
-            timeout: timeout ?? this.timeout
-        } );
-    };
-
-    put = ( url: string, data: any, params: Record<string, any> = {}, timeout?: number ) => {
-        return this.axios( {
-            method: 'put',
-            url,
-            data,
-            params,
-            timeout: timeout ?? this.timeout
-        } );
-    };
-
-    delete = ( url: string, timeout?: number ) => {
-        return this.axios( {
-            method: 'delete',
-            url,
-            timeout: timeout ?? this.timeout
-        } );
-    };
-
-    patch = ( url: string, data: any, params: Record<string, any> = {}, timeout?: number ) => {
-        return this.axios( {
-            method: 'patch',
-            url,
-            data,
-            params,
-            timeout: timeout ?? this.timeout
-        } );
-    };
-
-    /**
-     * Axios instance
-     */
-    get instance () {
-        return this.axios;
-    }
-}
+    return Object.assign( {}, instance, custom );
+};
 
 // ---------------------------------------------------------------------------------------
 
