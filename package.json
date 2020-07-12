@@ -1,6 +1,6 @@
 {
   "name": "@ssbdev/react-web-utilities",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "React utility library with handy hooks, components, helper functions.",
   "main": "./build/index.js",
   "types": "./build/index.d.ts",
