@@ -1,8 +1,9 @@
 // react
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // vendors
-import { AxiosError } from "axios";
+import Axios, { AxiosError, Canceler, CancelToken } from "axios";
+import { isFunction } from "lodash";
 
 // constants
 import { Fetched } from "../constants/interfaces";
@@ -13,7 +14,12 @@ import { isPromise } from "../helpers/isPromise";
 
 // --------------------------------------------------------------------------------------------
 
-export interface useFetchOptions<Fn extends ( ...args: any ) => Promise<any>> {
+export interface useFetchOptions<
+    Fn extends
+    ( ( ...args: any ) => Promise<any> ) |
+    ( ( ...args: any ) => ( cancelToken: CancelToken ) => Promise<any> ) |
+    ( ( ...args: any ) => [Promise<any>, Canceler] )
+    > {
     /**
      * Reference to the function which returns a Promise
      * @default undefined
@@ -68,6 +74,17 @@ export interface useFetchOptions<Fn extends ( ...args: any ) => Promise<any>> {
      * @default "FALSE"
      */
     defaultFetched?: Fetched;
+    /**
+     * message of the error thrown on request cancel
+     * @default undefined
+     */
+    onCancelMsg?: string;
+    /**
+     * callback which is called when an ongoing request is canceled
+     * - **onError** is not called when onCancel is present
+     * @default undefined
+     */
+    onCancel?: ( e: AxiosError | Error ) => void;
 }
 
 export interface useFetchReturnType<D extends any = any> {
@@ -96,12 +113,17 @@ export interface useFetchReturnType<D extends any = any> {
 
 // --------------------------------------------------------------------------------------------
 
+const CancelTokenConstructor = Axios.CancelToken;
+
 /**
  * React hook for fetching data based on condition and dependency array
  */
 const useFetch = <
     D extends any = any,
-    Fn extends ( ...args: any ) => Promise<any> = ( ...args: any ) => Promise<any>
+    Fn extends
+    ( ( ...args: any ) => Promise<any> ) |
+    ( ( ...args: any ) => ( cancelToken: CancelToken ) => Promise<any> ) |
+    ( ( ...args: any ) => [Promise<any>, Canceler] ) = ( ...args: any ) => Promise<any>
 > (
     options: useFetchOptions<Fn>
 ): useFetchReturnType<D> => {
@@ -114,19 +136,43 @@ const useFetch = <
         onError,
         condition = true,
         defaultData = null,
-        defaultFetched = "FALSE"
+        defaultFetched = "FALSE",
+        onCancelMsg,
+        onCancel
     } = options;
 
     const [data, setData] = useState<D | null>( defaultData );
     const [fetched, setFetched] = useState<Fetched>( defaultFetched );
 
+    const cancelRequest = useRef<Canceler | null>( null );
+
     const fetch = async ( force = false ) => {
         if ( !condition && !force ) return;
+
+        // if another request is made imediately, cancel it
+        cancelRequest.current?.();
 
         setFetched( "FETCHING" );
 
         try {
-            let { data } = await method( ...args );
+            const result = method( ...args );
+
+            let res;
+            if ( typeof result === "function" ) {
+                // executor: ( cancel: Canceler ) => void
+                const canceler = new CancelTokenConstructor( ( cancel ) => {
+                    cancelRequest.current = cancel.bind( null, onCancelMsg );
+                } );
+
+                res = await result( canceler );
+            }
+            else if ( Array.isArray( result ) ) {
+                res = await result[0];
+                cancelRequest.current = result[1];
+            }
+            else res = await result;
+
+            let data = res.data;
 
             if ( normalize ) data = normalizeFn( data, typeof normalize === "string" ? normalize : undefined );
             if ( typeof transformResData === "function" ) {
@@ -139,13 +185,22 @@ const useFetch = <
             setData( data );
             setFetched( "TRUE" );
         } catch ( e ) {
-            onError?.( e );
+            if ( isFunction( onCancel ) && Axios.isCancel( e ) ) {
+                onCancel( e );
+            } else {
+                onError?.( e );
+            }
             setFetched( "ERROR" );
         }
     };
 
     useEffect( () => {
         fetch();
+
+        () => {
+            // cancel ongoing request, if any before making another request
+            cancelRequest.current?.();
+        };
     }, dependencies );
 
     useEffect( () => {

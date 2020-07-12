@@ -1,4 +1,6 @@
 import Axios, { AxiosRequestConfig } from 'axios';
+import { isPromise } from '../helpers';
+import { isFunction } from 'lodash';
 
 // ---------------------------------------------------------------------------------------
 
@@ -15,29 +17,72 @@ export type AxiosResponse<T = any> = import( "axios" ).AxiosResponse<T>;
  */
 export type AxiosInstance = import( "axios" ).AxiosInstance;
 
+
+// --------------------------------------------------------------------------------------------
+
+export type CancelToken = import( 'axios' ).CancelToken;
+export type Canceler = import( 'axios' ).Canceler;
+
 // ---------------------------------------------------------------------------------------
+
 export interface IBuildClientOptions extends AxiosRequestConfig {
     /**
-     * A function that returns a token string that is attached to 
-     * Authorization header with bearer ( i.e, `Bearer <token>` )
+     * CallBack that can be used to modify response
      * @default undefined
+     * ```js
+     * onResponseFulfilled( res ) {
+     *     // data directly avaliable in the promise chain
+     *     return res.data;
+     * }
+     * ```
      */
-    getToken?: () => string | undefined;
+    onResponseFulfilled?: ( res: AxiosResponse, instance: AxiosInstance ) => AxiosResponse | Promise<AxiosResponse>;
     /**
      * CallBack that can be used to update / make ui changes based on errors
+     * **Note** Error doesnot get thrown (not be avaliable in subsequent catch blocks) if error object is not returned
      * @default undefined
      * @example
      * ```js
-     * onResponseError( error ) {
+     * onResponseRejected( error ) {
      *    // e.g, unauthorized error
      *    if( error.response && error.response.status === 401 ) {
      *        // redirection logic (or) reenter password popup
      *        // ...
      *    }
+     *    return err;
      *}
      * ```
      */
-    onResponseError?: ( error: AxiosError ) => void;
+    onResponseRejected?: ( error: AxiosError, instance: AxiosInstance ) => AxiosError | Error | undefined;
+    /**
+     * Callback that can be use to set headers before the request goes to server
+     * @default undefined
+     * @example
+     * ```js
+     * onRequestFulfilled( req ) {
+     *     const token = localStorage.getItem("token") ?? "";
+     *     req.headers["Authorization"] = `Bearer ${token}`;
+     *     return req;
+     * }
+     * ```
+     */
+    onRequestFulfilled?: ( req: AxiosRequestConfig, instance: AxiosInstance ) => AxiosRequestConfig | Promise<AxiosRequestConfig>;
+    /**
+    * CallBack that can be used to update / make ui changes based on errors;
+    * **Note** Error doesnot get thrown (not be avaliable in subsequent catch blocks) if error object is not returned
+    * @default undefined
+    * @example
+    * ```js
+    * onRequestRejected( error ) {
+    *    // e.g, request timed out
+    *    if( error.response && error.response.status === 408 ) {
+    *        // make ui changes
+    *        // ...
+    *    }
+    *}
+    * ```
+    */
+    onRequestRejected?: ( error: AxiosError, instance: AxiosInstance ) => AxiosError | Error | undefined;
 }
 
 // TODO: rename custom, update readme, changelog, update above extension example
@@ -50,6 +95,14 @@ interface OtherOptions<
     custom?: C;
 }
 
+interface Others {
+    generateCancelToken: () => {
+        cancelToken: CancelToken;
+        canceler: Canceler;
+    };
+    isCancel: typeof Axios.isCancel;
+}
+
 // ---------------------------------------------------------------------------------------
 
 /**
@@ -60,10 +113,12 @@ interface OtherOptions<
  * // ...
  * const Client = buildClient( {
  *     baseURL: "http://localhost:8000",
- *     getToken() {
- *         return localStorage.getItem( "token" )
+ *     onRequestFulfilled( req ) {
+ *         const token = localStorage.getItem("token") ?? "";
+ *         req.headers["Authorization"] = `Bearer ${token}`;
+ *         return req;
  *     },
- *     onResponseError( error ) {
+ *     onResponseRejected( error ) {
  *         // e.g, unauthorized error
  *         if( error.response && error.response.status === 401 ) {
  *             // redirection logic (or) reenter password popup
@@ -74,7 +129,7 @@ interface OtherOptions<
  * 
  * export {
  *     Client
- * }
+ * };
  * 
  * // MyComponent.js
  * // ...
@@ -126,23 +181,31 @@ interface OtherOptions<
  *                     // ...
  *                 },
  *                 ...config
- *             } )l
+ *             } );
  *         }
  *     }
  * } );
  * 
  * export {
  *     Client
- * }
+ * };
  * ```
  */
+const CancelToken = Axios.CancelToken;
+
+const generateCancelToken = () => {
+    const { token, cancel } = CancelToken.source();
+    return { cancelToken: token, canceler: cancel };
+};
 
 const buildClient = function <
     C extends Record<string, ( ( this: AxiosInstance, ...args: any ) => any ) | string | number | any[] | undefined | null>
-> ( options: IBuildClientOptions & OtherOptions<C> ): AxiosInstance & C {
+> ( options: IBuildClientOptions & OtherOptions<C> ): AxiosInstance & C & Others {
     const {
-        getToken,
-        onResponseError,
+        onResponseRejected,
+        onRequestFulfilled,
+        onRequestRejected,
+        onResponseFulfilled,
         custom,
         ...rest
     } = options;
@@ -154,31 +217,36 @@ const buildClient = function <
     instance.defaults.headers.post["Content-Type"] = "application/json";
 
     // attaching token to request body
-    if ( typeof getToken === "function" )
-        instance.interceptors.request.use(
-            ( req ) => {
-                let token = getToken();
-                req['headers']['Authorization'] = token ? `Bearer ${token}` : '';
-                return req;
-            },
-            ( e ) => {
-                return Promise.reject( e );
+    instance.interceptors.request.use(
+        ( req ) => onRequestFulfilled?.( req, instance ) ?? req,
+        async ( e ) => {
+            if ( isFunction( onRequestRejected ) ) {
+                let err = onRequestRejected( e, instance );
+                if ( isPromise( err ) ) err = await err;
+
+                // do not reject if error not returned
+                if ( !err ) return;
             }
-        );
+            Promise.reject( e );
+        }
+    );
 
     // errorhandling
-    if ( typeof onResponseError === "function" )
-        instance.interceptors.response.use(
-            ( res ) => {
-                return res;
-            },
-            ( e ) => {
-                onResponseError( e );
-                return Promise.reject( e );
-            }
-        );
+    instance.interceptors.response.use(
+        ( res ) => onResponseFulfilled?.( res, instance ) ?? res,
+        async ( e ) => {
+            if ( isFunction( onResponseRejected ) ) {
+                let err = onResponseRejected( e, instance );
+                if ( isPromise( err ) ) err = await err;
 
-    return Object.assign( {}, instance, custom );
+                // do not reject if error not returned
+                if ( !err ) return;
+            }
+            Promise.reject( e );
+        }
+    );
+
+    return Object.assign( {}, instance, { generateCancelToken, isCancel: Axios.isCancel }, custom );
 };
 
 // ---------------------------------------------------------------------------------------

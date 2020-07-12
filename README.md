@@ -1,5 +1,5 @@
 # react-web-utilities
-## Version 0.1.0
+## Version 0.2.0
 
 React utility library with handy hooks, components, helper functions.
 
@@ -8,6 +8,7 @@ React utility library with handy hooks, components, helper functions.
 * [Usage](#usage)
     * [Services](#services)
         * [buildClient](#buildclient)
+        * [BuildClientWithCanceler](#buildclientwithcanceler)
     * [Core](#core)
         * [Routes](#routes)
         * [LetSuspense](#letsuspense)
@@ -16,6 +17,7 @@ React utility library with handy hooks, components, helper functions.
         * [useFetch](#usefetch)
     * [Factories](#factories)
         * [ReduxActionConstants](#reduxactionconstants)
+        * [Service](#service)
     * [Component Creators](#component-creators)
         * [createFormError](#createformerror)
         * [createBreadcrumb](#createbreadcrumb)
@@ -38,9 +40,11 @@ Builds a axios instance.
 
 Option Name | Type | Default | Required (or) Optional | Description 
 -------------|-------|---------|-----------------------|-----------
-getToken | <code>() => string &#124; undefined</code> | `undefined` | Optional | A function that returns a token string that is attached to **Authorization** header with *bearer*. i.e, `Bearer <token>`
-onResponseError | `( error: AxiosError ) => void` | `undefined`| Optional | CallBack that can be used to update / make ui changes based on errors
-custom | `{ [name: string]: ( ( this: AxiosInstance, ...args: any ) => any ) | string | number | any[] | undefined | null> }` | `{}` | Optional | adds addition methods and properties on client (axios intance)
+onResponseFulfilled | <code>`( res: AxiosResponse ) => AxiosResponse | undefined`</code> | `undefined` | Optional | CallBack that can be used to modify response
+onResponseRejected | <code>`( error: AxiosError ) => AxiosError | undefined`</code> | `undefined` | Optional | CallBack that can be used to update / make ui changes based on errors
+onRequestFulfilled | <code>`( req: AxiosRequestConfig ) => AxiosRequestConfig | undefined`</code>| `undefined` | Optional | Callback that can be use to set headers before the request goes to server
+onRequestRejected | <code>`( error: AxiosError ) => AxiosError | undefined`</code> | `undefined` | Optional | CallBack that can be used to update / make ui changes based on errors
+custom | <code>`{ [name: string]: ( ( this: AxiosInstance, ...args: any ) => any ) | string | number | any[] | undefined | null> }`</code>  | `{}` | Optional | adds addition methods and properties on client (axios intance)
 ...rest | `AxiosRequestConfig` | - | - | axios request configuration
 
 #### Basic usage
@@ -77,12 +81,7 @@ Client.put(
 
 With token,
 
-Attaching token to **Authorization** header can be done by passing a function to **getToken** option which returns the token. Token will be substituted in the placeholder `<token>` as shown below. If the function returns `undefined` then empty string will be substituted instead.
-
-Header will look like,
-```js
-"Authorization": "Bearer <token>"
-```
+Attaching token to **Authorization** header can be done in **onRequestFulfilled** callback
 code,
 ```js
 // api.service.js
@@ -92,10 +91,12 @@ import { buildClient } from "@ssbdev/react-web-utilities";
 
 const Client = buildClient( {
     baseURL: "http://localhost:8000",
-    getToken() {
-        return localStorage.getItem( "token" )
+    onRequestFulfilled( req ) {
+        const token = localStorage.getItem("token") ?? "";
+        req.headers["Authorization"] = `Bearer ${token}`;
+        return req;
     },
-    onResponseError( error ) {
+    onResponseRejected( error ) {
         // e.g, unauthorized error
         if( error.response && error.response.status === 401 ) {
             // redirection logic (or) reenter password popup
@@ -106,7 +107,7 @@ const Client = buildClient( {
 
 export {
     Client
-}
+};
 ```
 ```js
 // MyComponent.js
@@ -130,7 +131,11 @@ export default () => {
         } )
     } , [] )
 
-// ...
+    return (
+        <div>
+            // ...
+        </div>
+    );
 }
 ```
 
@@ -162,15 +167,114 @@ const Client = buildClient({
                     // ...
                 },
                 ...config
-            } )l
+            } );
         }
     }
 } );
 
 export {
     Client
-}
+};
 // ...
+```
+
+### BuildClientWithCanceler
+Similar to buildClient, but this is a constructor which provides a canceler function along with the promise.
+
+#### Options
+
+Option Name | Type | Default | Required (or) Optional | Description 
+-------------|-------|---------|-----------------------|-----------
+onResponseFulfilled | <code>`( res: AxiosResponse ) => AxiosResponse | undefined`</code> | `undefined` | Optional | CallBack that can be used to modify response
+onResponseRejected | <code>`( error: AxiosError ) => AxiosError | undefined`</code> | `undefined` | Optional | CallBack that can be used to update / make ui changes based on errors
+onRequestFulfilled | <code>`( req: AxiosRequestConfig ) => AxiosRequestConfig | undefined`</code>| `undefined` | Optional | Callback that can be use to set headers before the request goes to server
+onRequestRejected | <code>`( error: AxiosError ) => AxiosError | undefined`</code> | `undefined` | Optional | CallBack that can be used to update / make ui changes based on errors
+custom | <code>`{ [name: string]: ( ( this: AxiosInstance, ...args: any ) => any ) | string | number | any[] | undefined | null> }`</code>  | `{}` | Optional | adds addition methods and properties on client (axios intance)
+...rest | `AxiosRequestConfig` | - | - | axios request configuration
+
+
+#### Basic usage
+```js
+const Client = new BuildClientWithCanceler( {
+    baseURL: "http://localhost:8000"
+} );
+
+// ...
+
+const [promise, canceler] = Client.put(
+    // url
+    "/api/books",
+    // data
+    {
+        title: "Update title",
+        desc: "Updated description"
+    },
+    // config
+    {
+    // params
+        params: { bookId: 21 }
+    }
+);
+
+promise.then( res => {
+    // then block
+} ).catch( error => { 
+    // catch block
+} )
+
+//... some where else in the code, to cancel the request
+canceler();
+
+// ...
+```
+
+#### Usage with useEffect
+```js
+// api.service.js
+// ...
+import { buildClient } from "@ssbdev/react-web-utilities";
+// ...
+
+const Client = new BuildClientWithCanceler( {
+    baseURL: "http://localhost:8000"
+} );
+
+export {
+    Client
+};
+```
+```js
+// MyComponent.js
+// ...
+import { Client } from "./api.service.js";
+// ...
+
+export default () => {
+    const [data, setData] = useState( [] );
+
+    useEffect( () => {
+        const [promise, canceler] = Client.post(
+            // url
+            "/api/books", 
+            // data
+            { title: "MyBook", price: 100 }
+        )
+
+        promise.then( res => {
+            setData( res.data );
+        } ).catch( e => {
+            console.log( "ERROR:", e );
+        } )
+
+        return () => canceler();
+    } , [] )
+
+    return (
+        <div>
+            // ...
+        </div>
+    );
+}
 ```
 
 ## Core
@@ -450,6 +554,8 @@ onError | `( e: AxiosError ) => void` | `undefined` | Optional | Callback that g
 condition | `boolean` | `true` | Optional | Condition to fetch. `true` -> make the api request on fetch Call (or) `false` -> donnot make api request on fetch call
 defaultData | `any` | `null` | Optional | Default state of **data**
 transformResData | `( data: any ) => any` | `undefined` | Optional | Transform the response data before storing it the "data" state. Whatever is returned by the function is set to "data". It can also return a **promise**. ***Note:*** if normalize is true (or) "somekey", then normalized data is avaliable in the params instead of response data
+onCancelMsg | `string` | `undefined` | Optional | message of the error thrown on request cancel
+onCancel | <code>`( e: AxiosError | Error ) => void`</code> | `undefined` | Optional | callback which is called when an ongoing request is canceled. **onError** is not called when onCancel is present and request is canceled
 
 #### Return object
 
@@ -578,6 +684,62 @@ export {
     initialState as booksInit
 }
 ```
+
+### Service
+Constructor that can be used with `buildClient` to assist with cancelling a request.
+
+#### Usage
+```js
+// books.service.js
+// ...
+
+const client = buildClient( {
+    baseURL: "http://localhost:8000"
+} );
+
+class Books extends Service {
+    get () {
+        const { cancelToken, canceler } = this.generateCancelToken();
+        return [
+            client.get( "api/books", {
+                cancelToken
+            } ),
+            canceler
+        ];
+    }
+}
+
+const BOOKS = new Books();
+
+export {
+    BOOKS
+};
+```
+```js
+// index.js
+// ...
+
+try {
+    const [promise, canceler] = BOOKS.get();
+
+    promise.then( res => {
+        // then block
+    } ).catch( error => { 
+        // catch block
+    } )
+} catch ( e ) {
+    if ( BOOKS.isCancel( e ) ) {
+        return console.log( "Request Canceled" );
+    };
+    console.log( e );
+}
+
+//... some where else in the code, to cancel the request
+canceler();
+
+// ...
+```
+
 
 ## Component Creators
 ### createFormError
