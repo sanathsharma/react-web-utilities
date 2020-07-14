@@ -17,7 +17,8 @@
     "ssbdev"
   ],
   "scripts": {
-    "build": "npm run clean && tsc && npm run build:CSS ",
+    "build": "jest && npm run clean && npm run tsc && npm run build:CSS ",
+    "tsc": "tsc -p tsconfig.prod.json",
     "clean": "rm -rf build",
     "build:CSS": "gulp buildCSS",
     "test": "jest --watchAll --no-cache"

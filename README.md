@@ -189,7 +189,6 @@ onResponseFulfilled | <code>`( res: AxiosResponse ) => AxiosResponse | undefined
 onResponseRejected | <code>`( error: AxiosError ) => AxiosError | undefined`</code> | `undefined` | Optional | CallBack that can be used to update / make ui changes based on errors
 onRequestFulfilled | <code>`( req: AxiosRequestConfig ) => AxiosRequestConfig | undefined`</code>| `undefined` | Optional | Callback that can be use to set headers before the request goes to server
 onRequestRejected | <code>`( error: AxiosError ) => AxiosError | undefined`</code> | `undefined` | Optional | CallBack that can be used to update / make ui changes based on errors
-custom | <code>`{ [name: string]: ( ( this: AxiosInstance, ...args: any ) => any ) | string | number | any[] | undefined | null> }`</code>  | `{}` | Optional | adds addition methods and properties on client (axios intance)
 ...rest | `AxiosRequestConfig` | - | - | axios request configuration
 
 

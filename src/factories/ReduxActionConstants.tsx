@@ -60,6 +60,21 @@ class ReduxActionConstants {
 
         Object.setPrototypeOf( this, ReduxActionConstants.prototype );
     };
+
+    toObject () {
+        return {
+            ENTITY: this.ENTITY,
+            INSERT: this.INSERT,
+            UPDATE: this.UPDATE,
+            REMOVE: this.REMOVE,
+            BULK_INSERT: this.BULK_INSERT,
+            BULK_UPDATE: this.BULK_UPDATE,
+            BULK_REMOVE: this.BULK_REMOVE,
+            SET: this.SET,
+            UNSET: this.UNSET,
+            RESET: this.RESET,
+        };
+    }
 }
 
 export {

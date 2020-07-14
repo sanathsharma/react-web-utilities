@@ -1,4 +1,5 @@
 import { BuildClientWithCanceler } from '../BuildClientWithCanceler';
+import { resolve } from 'path';
 
 describe( 'BuildClientWithCanceler', () => {
 
@@ -8,9 +9,7 @@ describe( 'BuildClientWithCanceler', () => {
         } );
 
         client.get = jest.fn().mockImplementation( () => [
-            jest.fn().mockResolvedValue( {
-                data: [{ title: "books" }]
-            } ),
+            Promise.resolve( { data: [{ title: "books" }] } ),
             jest.fn()
         ] );
 
@@ -32,9 +31,7 @@ describe( 'BuildClientWithCanceler', () => {
         } );
 
         client.get = jest.fn().mockImplementation( () => [
-            jest.fn().mockResolvedValue( {
-                data: [{ title: "books" }]
-            } ),
+            Promise.resolve( { data: [{ title: "books" }] } ),
             jest.fn()
         ] );
 
