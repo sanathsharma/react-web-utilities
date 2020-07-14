@@ -1,5 +1,5 @@
 # react-web-utilities
-## Version 0.2.0
+## Version 0.2.1
 
 React utility library with handy hooks, components, helper functions.
 
