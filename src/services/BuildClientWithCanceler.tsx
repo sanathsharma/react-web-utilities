@@ -245,6 +245,10 @@ class BuildClientWithCanceler {
     put = this.updates( "put" );
     patch = this.updates( "patch" );
 
+    get apiBase () {
+        return this.instance.defaults.baseURL;
+    }
+
     private generateCancelToken = () => {
         const { token, cancel } = this.CancelToken.source();
         return { cancelToken: token, canceler: cancel };
