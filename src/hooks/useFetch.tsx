@@ -147,6 +147,7 @@ const useFetch = <
     const cancelRequest = useRef<Canceler | null>( null );
 
     const fetch = async ( force = false ) => {
+        // if both condition and force is false
         if ( !condition && !force ) return;
 
         // if another request is made imediately, cancel it
@@ -167,8 +168,8 @@ const useFetch = <
                 res = await result( canceler );
             }
             else if ( Array.isArray( result ) ) {
-                res = await result[0];
                 cancelRequest.current = result[1];
+                res = await result[0];
             }
             else res = await result;
 
@@ -185,6 +186,8 @@ const useFetch = <
             setData( data );
             setFetched( "TRUE" );
         } catch ( e ) {
+            if ( process.env.NODE_ENV === "devlopment" ) console.log( "---useFetch---", e );
+
             if ( isFunction( onCancel ) && Axios.isCancel( e ) ) {
                 onCancel( e );
             } else {
@@ -197,7 +200,7 @@ const useFetch = <
     useEffect( () => {
         fetch();
 
-        () => {
+        return () => {
             // cancel ongoing request, if any before making another request
             cancelRequest.current?.();
         };
