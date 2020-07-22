@@ -552,7 +552,7 @@ normalize | <code>boolean &#124; string</code> | `false` | Optional | normalizes
 onError | `( e: AxiosError ) => void` | `undefined` | Optional | Callback that gets called on api request gets rejected with an error
 condition | `boolean` | `true` | Optional | Condition to fetch. `true` -> make the api request on fetch Call (or) `false` -> donnot make api request on fetch call
 defaultData | `any` | `null` | Optional | Default state of **data**
-transformResData | `( data: any ) => any` | `undefined` | Optional | Transform the response data before storing it the "data" state. Whatever is returned by the function is set to "data". It can also return a **promise**. ***Note:*** if normalize is true (or) "somekey", then normalized data is avaliable in the params instead of response data
+transformResponse | `( res: any ) => any` | `undefined` | Required | Transform the response before storing data in the "data" state. Whatever is returned by the function is set to "data". It can also return a **promise**. ***Note:*** if normalize is true (or) "somekey", then normalization is done on object returned
 onCancelMsg | `string` | `undefined` | Optional | message of the error thrown on request cancel
 onCancel | <code>`( e: AxiosError | Error ) => void`</code> | `undefined` | Optional | callback which is called when an ongoing request is canceled. **onError** is not called when onCancel is present and request is canceled
 

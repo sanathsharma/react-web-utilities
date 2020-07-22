@@ -22,7 +22,8 @@ describe( 'useFetch', () => {
         await act( async () => {
             const { result, waitForNextUpdate } = await renderHook( ( props ) => useFetch( {
                 method: () => Client.get( "/api" ),
-                args: []
+                args: [],
+                transformResponse: res => res.data
             } ), {
                 initialProps: {}
             } );
@@ -58,7 +59,8 @@ describe( 'useFetch', () => {
         const { result, waitForNextUpdate } = await renderHook( ( props ) => useFetch( {
             method: ( id: number ) => Client.get( "/api", { params: { id } } ),
             args: [props.id],
-            onError: mockCallback
+            onError: mockCallback,
+            transformResponse: res => res.data
         } ), {
             initialProps: {
                 id: 1
@@ -85,7 +87,8 @@ describe( 'useFetch', () => {
             const { result, waitForNextUpdate } = renderHook( ( props ) => useFetch( {
                 method: ( id: number ) => Client.get( "/api", { params: { id } } ),
                 args: [props.id],
-                condition: false
+                condition: false,
+                transformResponse: res => res.data
             } ), {
                 initialProps: {
                     id: 1
@@ -110,7 +113,8 @@ describe( 'useFetch', () => {
                 method: () => Client.get( "/api" ),
                 args: [],
                 condition: props.condition,
-                dependencies: [props.condition]
+                dependencies: [props.condition],
+                transformResponse: res => res.data
             } ), {
                 initialProps: {
                     condition: false
@@ -145,7 +149,8 @@ describe( 'useFetch', () => {
             const { result, rerender, waitForNextUpdate } = renderHook( ( props ) => useFetch( {
                 method: () => Client.get( "/api" ),
                 args: [],
-                condition: props.condition
+                condition: props.condition,
+                transformResponse: res => res.data
             } ), {
                 initialProps: {
                     condition: false
@@ -192,7 +197,8 @@ describe( 'useFetch', () => {
             method: ( id: number ) => Client.get( "/api", { params: { id } } ),
             args: [props.id],
             defaultData,
-            condition: false
+            condition: false,
+            transformResponse: res => res.data
         } ), {
             initialProps: {
                 id: 1
@@ -220,7 +226,8 @@ describe( 'useFetch', () => {
                 const { result, waitForNextUpdate } = await renderHook( ( props ) => useFetch( {
                     method: () => Client.get( "/api" ),
                     args: [],
-                    normalize: true
+                    normalize: true,
+                    transformResponse: res => res.data
                 } ), {
                     initialProps: {}
                 } );
@@ -243,7 +250,8 @@ describe( 'useFetch', () => {
                 const { result, waitForNextUpdate } = await renderHook( ( props ) => useFetch( {
                     method: () => Client.get( "/api" ),
                     args: [],
-                    normalize: "title"
+                    normalize: "title",
+                    transformResponse: res => res.data
                 } ), {
                     initialProps: {}
                 } );
@@ -260,9 +268,9 @@ describe( 'useFetch', () => {
         } );
     } );
 
-    describe( 'transformResData', () => {
+    describe( 'transformResponse', () => {
 
-        it( 'transformResData works fine', async () => {
+        it( 'transformResponse works fine', async () => {
             // constants
             const data = [
                 { id: 1, title: "example" },
@@ -277,8 +285,8 @@ describe( 'useFetch', () => {
                 const { result, waitForNextUpdate } = await renderHook( ( props ) => useFetch( {
                     method: () => Client.get( "/api" ),
                     args: [],
-                    transformResData ( data ) {
-                        return normalize( data, "title" );
+                    transformResponse ( res ) {
+                        return normalize( res.data, "title" );
                     }
                 } ), {
                     initialProps: {}
@@ -295,7 +303,7 @@ describe( 'useFetch', () => {
             } );
         } );
 
-        it( 'works fine if transformResData returns a promise', async () => {
+        it( 'works fine if transformResponse returns a promise', async () => {
             // constants
             const data = [
                 { id: 1, title: "example" },
@@ -310,8 +318,8 @@ describe( 'useFetch', () => {
                 const { result, waitForNextUpdate } = await renderHook( ( props ) => useFetch( {
                     method: () => Client.get( "/api" ),
                     args: [],
-                    transformResData ( data ) {
-                        return Promise.resolve( normalize( data, "title" ) );
+                    transformResponse ( res ) {
+                        return Promise.resolve( normalize( res.data, "title" ) );
                     }
                 } ), {
                     initialProps: {}
@@ -354,7 +362,8 @@ describe( 'useFetch', () => {
             const { result, waitForNextUpdate, rerender } = await renderHook( ( props ) => useFetch( {
                 method: ( id: number ) => Client.get( "/api", { params: { id } } ),
                 args: [props.id],
-                dependencies: [props.id]
+                dependencies: [props.id],
+                transformResponse: res => res.data
             } ), {
                 initialProps: {
                     id: 1

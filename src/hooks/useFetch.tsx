@@ -51,7 +51,7 @@ export interface useFetchOptions<
      * - **Note:** if normalize is true|"somekey", 
      * then normalized data is avaliable in the params instead of response data
      */
-    transformResData?: ( data: any ) => any;
+    transformResponse: ( res: any ) => any;
     /**
      * Callback that gets called on api request gets rejected with an error
      * @default undefined
@@ -132,7 +132,7 @@ const useFetch = <
         args,
         dependencies = [],
         normalize = false,
-        transformResData,
+        transformResponse,
         onError,
         condition = true,
         defaultData = null,
@@ -173,15 +173,13 @@ const useFetch = <
             }
             else res = await result;
 
-            let data = res.data;
+            let data;
+            data = transformResponse( res );
+
+            // if promise is returned
+            if ( isPromise( data ) ) data = await data;
 
             if ( normalize ) data = normalizeFn( data, typeof normalize === "string" ? normalize : undefined );
-            if ( typeof transformResData === "function" ) {
-                data = transformResData( data );
-
-                // if promise is returned
-                if ( isPromise( data ) ) data = await data;
-            }
 
             setData( data );
             setFetched( "TRUE" );
