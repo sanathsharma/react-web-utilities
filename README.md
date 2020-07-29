@@ -1,59 +1,68 @@
 # react-web-utilities
-## Version 0.2.4
 
 React utility library with handy hooks, components, helper functions.
 
 # Table of contents
-* [Install](#install)
-* [Usage](#usage)
-    * [Services](#services)
-        * [buildClient](#buildclient)
-        * [BuildClientWithCanceler](#buildclientwithcanceler)
-    * [Core](#core)
-        * [Routes](#routes)
-        * [LetSuspense](#letsuspense)
-    * [Hooks](#hooks)
-        * [useCountRenders](#usecountrenders)
-        * [useFetch](#usefetch)
-    * [Factories](#factories)
-        * [ReduxActionConstants](#reduxactionconstants)
-        * [Service](#service)
-    * [Component Creators](#component-creators)
-        * [createFormError](#createformerror)
-        * [createBreadcrumb](#createbreadcrumb)
+
+-   [Install](#install)
+-   [Usage](#usage)
+    -   [Services](#services)
+        -   [buildClient](#buildclient)
+        -   [BuildClientWithCanceler](#buildclientwithcanceler)
+    -   [Core](#core)
+        -   [Routes](#routes)
+        -   [LetSuspense](#letsuspense)
+    -   [Hooks](#hooks)
+        -   [useCountRenders](#usecountrenders)
+        -   [useFetch](#usefetch)
+    -   [Factories](#factories)
+        -   [ReduxActionConstants](#reduxactionconstants)
+        -   [Service](#service)
+    -   [Component Creators](#component-creators)
+        -   [createFormError](#createformerror)
+        -   [createBreadcrumb](#createbreadcrumb)
 
 # Install
+
 with npm,
+
 ```sh
 npm install --save @ssbdev/react-web-utilities
 ```
+
 with yarn,
+
 ```sh
 yarn add @ssbdev/react-web-utilities
 ```
+
 # Usage
+
 ## Services
+
 ### buildClient
+
 Builds a axios instance.
 
 #### Options
 
-Option Name | Type | Default | Required (or) Optional | Description 
--------------|-------|---------|-----------------------|-----------
-onResponseFulfilled | <code>`( res: AxiosResponse ) => AxiosResponse | undefined`</code> | `undefined` | Optional | CallBack that can be used to modify response
-onResponseRejected | <code>`( error: AxiosError ) => AxiosError | undefined`</code> | `undefined` | Optional | CallBack that can be used to update / make ui changes based on errors
-onRequestFulfilled | <code>`( req: AxiosRequestConfig ) => AxiosRequestConfig | undefined`</code>| `undefined` | Optional | Callback that can be use to set headers before the request goes to server
-onRequestRejected | <code>`( error: AxiosError ) => AxiosError | undefined`</code> | `undefined` | Optional | CallBack that can be used to update / make ui changes based on errors
-custom | <code>`{ [name: string]: ( ( this: AxiosInstance, ...args: any ) => any ) | string | number | any[] | undefined | null> }`</code>  | `{}` | Optional | adds addition methods and properties on client (axios intance)
-...rest | `AxiosRequestConfig` | - | - | axios request configuration
+| Option Name         | Type                                                                                                                              | Default     | Required (or) Optional | Description                                                               |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------------------- | ------------------------------------------------------------------------- |
+| onResponseFulfilled | <code>`( res: AxiosResponse ) => AxiosResponse | undefined`</code>                                                                | `undefined` | Optional               | CallBack that can be used to modify response                              |
+| onResponseRejected  | <code>`( error: AxiosError ) => AxiosError | undefined`</code>                                                                    | `undefined` | Optional               | CallBack that can be used to update / make ui changes based on errors     |
+| onRequestFulfilled  | <code>`( req: AxiosRequestConfig ) => AxiosRequestConfig | undefined`</code>                                                      | `undefined` | Optional               | Callback that can be use to set headers before the request goes to server |
+| onRequestRejected   | <code>`( error: AxiosError ) => AxiosError | undefined`</code>                                                                    | `undefined` | Optional               | CallBack that can be used to update / make ui changes based on errors     |
+| custom              | <code>`{ [name: string]: ( ( this: AxiosInstance, ...args: any ) => any ) | string | number | any[] | undefined | null> }`</code> | `{}`        | Optional               | adds addition methods and properties on client (axios intance)            |
+| ...rest             | `AxiosRequestConfig`                                                                                                              | -           | -                      | axios request configuration                                               |
 
 #### Basic usage
 
 Without token,
+
 ```js
-const Client = buildClient( {
-    baseURL: "http://localhost:8000"
-} );
+const Client = buildClient({
+    baseURL: "http://localhost:8000",
+});
 
 // ...
 
@@ -63,18 +72,20 @@ Client.put(
     // data
     {
         title: "Update title",
-        desc: "Updated description"
+        desc: "Updated description",
     },
     // config
     {
-    // params
-        params: { bookId: 21 }
+        // params
+        params: { bookId: 21 },
     }
-).then( res => {
-    // then block
-} ).catch( error => { 
-    // catch block
-} )
+)
+    .then(res => {
+        // then block
+    })
+    .catch(error => {
+        // catch block
+    });
 
 // ...
 ```
@@ -83,32 +94,32 @@ With token,
 
 Attaching token to **Authorization** header can be done in **onRequestFulfilled** callback
 code,
+
 ```js
 // api.service.js
 // ...
 import { buildClient } from "@ssbdev/react-web-utilities";
 // ...
 
-const Client = buildClient( {
+const Client = buildClient({
     baseURL: "http://localhost:8000",
-    onRequestFulfilled( req ) {
+    onRequestFulfilled(req) {
         const token = localStorage.getItem("token") ?? "";
         req.headers["Authorization"] = `Bearer ${token}`;
         return req;
     },
-    onResponseRejected( error ) {
+    onResponseRejected(error) {
         // e.g, unauthorized error
-        if( error.response && error.response.status === 401 ) {
+        if (error.response && error.response.status === 401) {
             // redirection logic (or) reenter password popup
             // ...
         }
-    }
-} );
+    },
+});
 
-export {
-    Client
-};
+export { Client };
 ```
+
 ```js
 // MyComponent.js
 // ...
@@ -116,31 +127,31 @@ import { Client } from "./api.service.js";
 // ...
 
 export default () => {
-    const [data, setData] = useState( [] );
+    const [data, setData] = useState([]);
 
-    useEffect( () => {
+    useEffect(() => {
         Client.post(
             // url
-            "/api/books", 
+            "/api/books",
             // data
             { title: "MyBook", price: 100 }
-        ) .then( res => {
-            setData( res.data );
-        } ).catch( e => {
-            console.log( "ERROR:", e );
-        } )
-    } , [] )
+        )
+            .then(res => {
+                setData(res.data);
+            })
+            .catch(e => {
+                console.log("ERROR:", e);
+            });
+    }, []);
 
-    return (
-        <div>
-            // ...
-        </div>
-    );
-}
+    return <div>// ...</div>;
+};
 ```
 
 #### Advance Usage
+
 Adding custom methods and properties. **"this"** inside a custom method points to **axios instance**
+
 ```js
 // api.service.js
 // ...
@@ -155,48 +166,48 @@ const Client = buildClient({
         },
         upload(
             method, // "post" | "put"
-            url, 
+            url,
             data,
             config // AxiosRequestConfig
         ) {
-            return this[method]( url, data, {
+            return this[method](url, data, {
                 timeout: 0,
-                onUploadProgress ( e ) { // e: ProgressEvent
-                    const progress = ( e.loaded / e.total ) * 100;
+                onUploadProgress(e) {
+                    // e: ProgressEvent
+                    const progress = (e.loaded / e.total) * 100;
                     // logic to indicate the progress on the ui
                     // ...
                 },
-                ...config
-            } );
-        }
-    }
-} );
+                ...config,
+            });
+        },
+    },
+});
 
-export {
-    Client
-};
+export { Client };
 // ...
 ```
 
 ### BuildClientWithCanceler
+
 Similar to buildClient, but this is a constructor which provides a canceler function along with the promise.
 
 #### Options
 
-Option Name | Type | Default | Required (or) Optional | Description 
--------------|-------|---------|-----------------------|-----------
-onResponseFulfilled | <code>`( res: AxiosResponse ) => AxiosResponse | undefined`</code> | `undefined` | Optional | CallBack that can be used to modify response
-onResponseRejected | <code>`( error: AxiosError ) => AxiosError | undefined`</code> | `undefined` | Optional | CallBack that can be used to update / make ui changes based on errors
-onRequestFulfilled | <code>`( req: AxiosRequestConfig ) => AxiosRequestConfig | undefined`</code>| `undefined` | Optional | Callback that can be use to set headers before the request goes to server
-onRequestRejected | <code>`( error: AxiosError ) => AxiosError | undefined`</code> | `undefined` | Optional | CallBack that can be used to update / make ui changes based on errors
-...rest | `AxiosRequestConfig` | - | - | axios request configuration
-
+| Option Name         | Type                                                                         | Default     | Required (or) Optional | Description                                                               |
+| ------------------- | ---------------------------------------------------------------------------- | ----------- | ---------------------- | ------------------------------------------------------------------------- |
+| onResponseFulfilled | <code>`( res: AxiosResponse ) => AxiosResponse | undefined`</code>           | `undefined` | Optional               | CallBack that can be used to modify response                              |
+| onResponseRejected  | <code>`( error: AxiosError ) => AxiosError | undefined`</code>               | `undefined` | Optional               | CallBack that can be used to update / make ui changes based on errors     |
+| onRequestFulfilled  | <code>`( req: AxiosRequestConfig ) => AxiosRequestConfig | undefined`</code> | `undefined` | Optional               | Callback that can be use to set headers before the request goes to server |
+| onRequestRejected   | <code>`( error: AxiosError ) => AxiosError | undefined`</code>               | `undefined` | Optional               | CallBack that can be used to update / make ui changes based on errors     |
+| ...rest             | `AxiosRequestConfig`                                                         | -           | -                      | axios request configuration                                               |
 
 #### Basic usage
+
 ```js
-const Client = new BuildClientWithCanceler( {
-    baseURL: "http://localhost:8000"
-} );
+const Client = new BuildClientWithCanceler({
+    baseURL: "http://localhost:8000",
+});
 
 // ...
 
@@ -206,20 +217,22 @@ const [promise, canceler] = Client.put(
     // data
     {
         title: "Update title",
-        desc: "Updated description"
+        desc: "Updated description",
     },
     // config
     {
-    // params
-        params: { bookId: 21 }
+        // params
+        params: { bookId: 21 },
     }
 );
 
-promise.then( res => {
-    // then block
-} ).catch( error => { 
-    // catch block
-} )
+promise
+    .then(res => {
+        // then block
+    })
+    .catch(error => {
+        // catch block
+    });
 
 //... some where else in the code, to cancel the request
 canceler();
@@ -228,20 +241,20 @@ canceler();
 ```
 
 #### Usage with useEffect
+
 ```js
 // api.service.js
 // ...
 import { buildClient } from "@ssbdev/react-web-utilities";
 // ...
 
-const Client = new BuildClientWithCanceler( {
-    baseURL: "http://localhost:8000"
-} );
+const Client = new BuildClientWithCanceler({
+    baseURL: "http://localhost:8000",
+});
 
-export {
-    Client
-};
+export { Client };
 ```
+
 ```js
 // MyComponent.js
 // ...
@@ -249,200 +262,181 @@ import { Client } from "./api.service.js";
 // ...
 
 export default () => {
-    const [data, setData] = useState( [] );
+    const [data, setData] = useState([]);
 
-    useEffect( () => {
+    useEffect(() => {
         const [promise, canceler] = Client.post(
             // url
-            "/api/books", 
+            "/api/books",
             // data
             { title: "MyBook", price: 100 }
-        )
+        );
 
-        promise.then( res => {
-            setData( res.data );
-        } ).catch( e => {
-            console.log( "ERROR:", e );
-        } )
+        promise
+            .then(res => {
+                setData(res.data);
+            })
+            .catch(e => {
+                console.log("ERROR:", e);
+            });
 
         return () => canceler();
-    } , [] )
+    }, []);
 
-    return (
-        <div>
-            // ...
-        </div>
-    );
-}
+    return <div>// ...</div>;
+};
 ```
 
 ## Core
 
 ### Routes
+
 Responsible for rendering all the routes with switch. Uses react-router-dom, "Switch" & "Route" Components
 
 #### Props table
 
-Prop Name | Type | Default | Required (or) Optional | Description 
--------------|-------|---------|-----------------------|-----------
-path | `string` | `undefined` | Required | Any valid URL path
-component | `React.ComponentType<any>` | `undefined` | Optional | A React component to render only when the location matches. It will be rendered with route props
-active | `boolean` | `true` | Optional | When false, route is equivalent to not existing
-name | `string` | `undefined` | Optional |A Name for the route, used by the crumb
-...rest | `RouteProps` | - | - | rest of ***react-router-dom***'s **RouteProps**. For more info, [click here](https://reacttraining.com/react-router/web/api/Route).
+| Prop Name | Type                       | Default     | Required (or) Optional | Description                                                                                                                         |
+| --------- | -------------------------- | ----------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| path      | `string`                   | `undefined` | Required               | Any valid URL path                                                                                                                  |
+| component | `React.ComponentType<any>` | `undefined` | Optional               | A React component to render only when the location matches. It will be rendered with route props                                    |
+| active    | `boolean`                  | `true`      | Optional               | When false, route is equivalent to not existing                                                                                     |
+| name      | `string`                   | `undefined` | Optional               | A Name for the route, used by the crumb                                                                                             |
+| ...rest   | `RouteProps`               | -           | -                      | rest of **_react-router-dom_**'s **RouteProps**. For more info, [click here](https://reacttraining.com/react-router/web/api/Route). |
 
 #### Basic usage
+
 ```js
 // AppRouter.js
 // ...
 import { Routes } from "@ssbdev/react-web-utilities";
 // ...
 
-export default function AppRouter () {
+export default function AppRouter() {
     const routes = [
-        { 
-            path:"/",
+        {
+            path: "/",
             exact: true,
-            component: Home
+            component: Home,
         },
-        { 
-            path:"/books",
+        {
+            path: "/books",
             exact: true,
-            component: Books
+            component: Books,
         },
-        { 
-            path:"/books/1",
+        {
+            path: "/books/1",
             exact: true,
-            component: BookInfo
+            component: BookInfo,
         },
-        { 
-            path:"/books/1/author",
+        {
+            path: "/books/1/author",
             exact: true,
-            component: AuthorInfo
+            component: AuthorInfo,
         },
     ];
 
-    return (
-        <Routes
-            routes={ routes }
-            redirectTo="/"
-        />
-    );
-};
+    return <Routes routes={routes} redirectTo="/" />;
+}
 ```
 
 #### Usage with crumbs
+
 ```js
 // AppRouter.js
 // ...
 import { Routes } from "@ssbdev/react-web-utilities";
 // ...
 
-export default function AppRouter () {
+export default function AppRouter() {
     const routes = [
-        { 
-            path:"/",
+        {
+            path: "/",
             exact: true,
             component: Home,
-            name: "Home"
+            name: "Home",
         },
-        { 
-            path:"/books",
+        {
+            path: "/books",
             exact: true,
             component: Books,
-            name: "All Books"
+            name: "All Books",
         },
-        { 
-            path:"/books/1",
+        {
+            path: "/books/1",
             exact: true,
             component: BookInfo,
-            name: "Book"
+            name: "Book",
         },
-        { 
-            path:"/books/1/author",
+        {
+            path: "/books/1/author",
             exact: true,
             component: AuthorInfo,
-            name: "Author"
+            name: "Author",
         },
     ];
 
-    return (
-        <Routes
-            routes={ routes }
-            crumbs={ true }
-            redirectTo="/"
-        />
-    );
-};
+    return <Routes routes={routes} crumbs={true} redirectTo="/" />;
+}
 ```
+
 Basic Breadcrumb navigation component implementation.
 or use [createBreadcrumb](#createbreadcrumb) instead.
+
 ```js
 // Crumbs.js
 // ...
 
-export const Crumbs = ( props ) => {
+export const Crumbs = props => {
     const { details } = props;
 
     const renderCrumbs = () => {
         const displayContent = [];
 
-        details.forEach( ( detail, index ) => {
-            const {
-                key,
-                content,
-                active,
-                href
-            } = detail;
-            
+        details.forEach((detail, index) => {
+            const { key, content, active, href } = detail;
+
             displayContent.push(
-                <Fragment key={ key }>
-                    {
-                        active 
-                            ? <a href={ href }>{ content }</a>
-                            : <span>{ content }</span>
-                    }
+                <Fragment key={key}>
+                    {active ? (
+                        <a href={href}>{content}</a>
+                    ) : (
+                        <span>{content}</span>
+                    )}
                 </Fragment>
             );
 
             // if not the last element
-            if( details.length !== index + 1 ) {
-                displayContent.push( 
-                    <span
-                        key={`${key}_seperator`} 
-                        className="icon"
-                    >/</span>
+            if (details.length !== index + 1) {
+                displayContent.push(
+                    <span key={`${key}_seperator`} className="icon">
+                        /
+                    </span>
                 );
             }
-        } );
+        });
 
         return displayContent;
-    }
+    };
 
-    return (
-        <div className="flex row">
-            { renderCrumbs() }
-        </div>
-    );
+    return <div className="flex row">{renderCrumbs()}</div>;
 };
 ```
+
 "crumbs" prop usage,
+
 ```js
 // e.g, AuthorInfo.js
 // ...
 import Crumbs from "./Crumbs";
 // ...
 
-export const AuthorInfo = ( props ) => {
+export const AuthorInfo = props => {
     const { crumbs } = props;
 
     return (
         <div className="flex col">
-            <Crumbs details={ crumbs } />
-            <div>
-                AuthorInfo
-                ...
-            </div>
+            <Crumbs details={crumbs} />
+            <div>AuthorInfo ...</div>
         </div>
     );
 };
@@ -456,17 +450,18 @@ Component that renders a placeholder component, till the condition satisfies for
 
 #### Props table
 
-Prop Name | Type | Default | Required (or) Optional | Description 
--------------|-------|---------|-----------------------|-----------
-condition | `boolean` | `false` | Optional | boolean or expression that evaluates to `true` or `false`. `true` -> render the **children**, `false` -> render **loadingPlaceholder**
-errorCondition | `boolean` | `false` | Optional |  boolean or expression that evaluates to `true` or `false`. `true` -> render the **errorPlaceholder**, `false` -> render **loadingPlaceholder** / **children** based on **condition** 
-loadingPlaceholder | `React.ComponentType<any>` | `undefined` | Required | Component to rendered if loading is true. Constructor of component. i.e, `LoaderComponent` instead of `<LoaderComponent />`
-multiplier | `number` | `1` | Optional | The number of placeholders to be rendered
-errorPlaceholder | `React.ReactNode` | `undefined` | Optional | Component to rendered if error occurs. Instance of a component, unlike **loadingPlaceholder**. i.e, `<Retry onClick={ ... } />` instead of `Retry`
-children | <code>React.ReactNodeArray &#124; React.ReactNode</code> | `undefined` | Optional | The actual component(s) that will be rendered when the condition evaluates to `true`
-initialDelay | `number` | `0` | Optional | Minimum time (in milliseconds) before a component is rendered
+| Prop Name          | Type                                                     | Default     | Required (or) Optional | Description                                                                                                                                                                          |
+| ------------------ | -------------------------------------------------------- | ----------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| condition          | `boolean`                                                | `false`     | Optional               | boolean or expression that evaluates to `true` or `false`. `true` -> render the **children**, `false` -> render **loadingPlaceholder**                                               |
+| errorCondition     | `boolean`                                                | `false`     | Optional               | boolean or expression that evaluates to `true` or `false`. `true` -> render the **errorPlaceholder**, `false` -> render **loadingPlaceholder** / **children** based on **condition** |
+| loadingPlaceholder | `React.ComponentType<any>`                               | `undefined` | Required               | Component to rendered if loading is true. Constructor of component. i.e, `LoaderComponent` instead of `<LoaderComponent />`                                                          |
+| multiplier         | `number`                                                 | `1`         | Optional               | The number of placeholders to be rendered                                                                                                                                            |
+| errorPlaceholder   | `React.ReactNode`                                        | `undefined` | Optional               | Component to rendered if error occurs. Instance of a component, unlike **loadingPlaceholder**. i.e, `<Retry onClick={ ... } />` instead of `Retry`                                   |
+| children           | <code>React.ReactNodeArray &#124; React.ReactNode</code> | `undefined` | Optional               | The actual component(s) that will be rendered when the condition evaluates to `true`                                                                                                 |
+| initialDelay       | `number`                                                 | `0`         | Optional               | Minimum time (in milliseconds) before a component is rendered                                                                                                                        |
 
 #### Basic usage
+
 ```js
 // MyComponent.js
 // ...
@@ -479,7 +474,7 @@ export default ()=>{
         // ...
     }, [] )
 
-    const fetchData = () => {  
+    const fetchData = () => {
         // api request logic
     }
 
@@ -497,17 +492,20 @@ export default ()=>{
     );
 };
 ```
+
 #### With delay
+
 Useful to show a loding screen event though there is not async dependency, meaning no backend api to hit to fetch the data, but still want to show the loding component for minute amount of time.
+
 ```js
 // MyComponent.js
 // ...
-export default ()=>{
+export default () => {
     return (
         <LetSuspense
-            condition={ true }
-            loadingPlaceholder={ LoaderComponent }
-            delay={ 500 }
+            condition={true}
+            loadingPlaceholder={LoaderComponent}
+            delay={500}
         >
             // ...
         </LetSuspense>
@@ -516,16 +514,19 @@ export default ()=>{
 ```
 
 ## Hooks
+
 ### useCountRenders
+
 Logs the number of times the component rerendred after mount. Logs only in development environment.
 
 #### Args Table
 
-Arg Name | Type | Default | Required (or) Optional | Description 
--------------|-------|---------|-----------------------|-----------
-componentName | `string` | `undefined` | Required | Name of the component. used in the logs detail
+| Arg Name      | Type     | Default     | Required (or) Optional | Description                                    |
+| ------------- | -------- | ----------- | ---------------------- | ---------------------------------------------- |
+| componentName | `string` | `undefined` | Required               | Name of the component. used in the logs detail |
 
 #### usage
+
 ```js
 // MyComponent.js
 // ...
@@ -539,31 +540,32 @@ export default () => {
 ```
 
 ### useFetch
+
 React hook for fetching data based on condition and dependency array.
 
 #### Options
 
-option | Type | Default | Required (or) Optional | Description 
---------|-------|---------|--------------------------|--------------
-method | `( ...args: any ) => Promise<any>` | `undefined` | Required | Reference to the function which returns a Promise
-args | `Parameters<method>` | `undefined` | Required | Arguments to the function refered for "method"
-dependencies | `any[]` | `[]` | Optional | Refetch based on dependency value change, **useEffect** dependency array
-normalize | <code>boolean &#124; string</code> | `false` | Optional | normalizes based on the key provided. `true` -> normalizes by "id" (or) `false` -> directly sets data with the response data (or) `"somekey"` -> normalizes by "somekey"
-onError | `( e: AxiosError ) => void` | `undefined` | Optional | Callback that gets called on api request gets rejected with an error
-condition | `boolean` | `true` | Optional | Condition to fetch. `true` -> make the api request on fetch Call (or) `false` -> donnot make api request on fetch call
-defaultData | `any` | `null` | Optional | Default state of **data**
-transformResponse | `( res: any ) => any` | `undefined` | Required | Transform the response before storing data in the "data" state. Whatever is returned by the function is set to "data". It can also return a **promise**. ***Note:*** if normalize is true (or) "somekey", then normalization is done on object returned
-onCancelMsg | `string` | `undefined` | Optional | message of the error thrown on request cancel
-onCancel | <code>`( e: AxiosError | Error ) => void`</code> | `undefined` | Optional | callback which is called when an ongoing request is canceled. **onError** is not called when onCancel is present and request is canceled
+| option            | Type                                             | Default     | Required (or) Optional | Description                                                                                                                                                                                                                                             |
+| ----------------- | ------------------------------------------------ | ----------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| method            | `( ...args: any ) => Promise<any>`               | `undefined` | Required               | Reference to the function which returns a Promise                                                                                                                                                                                                       |
+| args              | `Parameters<method>`                             | `undefined` | Required               | Arguments to the function refered for "method"                                                                                                                                                                                                          |
+| dependencies      | `any[]`                                          | `[]`        | Optional               | Refetch based on dependency value change, **useEffect** dependency array                                                                                                                                                                                |
+| normalize         | <code>boolean &#124; string</code>               | `false`     | Optional               | normalizes based on the key provided. `true` -> normalizes by "id" (or) `false` -> directly sets data with the response data (or) `"somekey"` -> normalizes by "somekey"                                                                                |
+| onError           | `( e: AxiosError ) => void`                      | `undefined` | Optional               | Callback that gets called on api request gets rejected with an error                                                                                                                                                                                    |
+| condition         | `boolean`                                        | `true`      | Optional               | Condition to fetch. `true` -> make the api request on fetch Call (or) `false` -> donnot make api request on fetch call                                                                                                                                  |
+| defaultData       | `any`                                            | `null`      | Optional               | Default state of **data**                                                                                                                                                                                                                               |
+| transformResponse | `( res: any ) => any`                            | `undefined` | Required               | Transform the response before storing data in the "data" state. Whatever is returned by the function is set to "data". It can also return a **promise**. **_Note:_** if normalize is true (or) "somekey", then normalization is done on object returned |
+| onCancelMsg       | `string`                                         | `undefined` | Optional               | message of the error thrown on request cancel                                                                                                                                                                                                           |
+| onCancel          | <code>`( e: AxiosError | Error ) => void`</code> | `undefined` | Optional               | callback which is called when an ongoing request is canceled. **onError** is not called when onCancel is present and request is canceled                                                                                                                |
 
 #### Return object
 
-keys | Type | Default | Description 
---------|-------|---------|--------------
-fetched | `Fetched` | `"FALSE"` | Tells at what state the api call is in. One of `"FALSE" | "FETCHING" | "ERROR" | "TRUE"`
-data | `any` | `null` | Response data or normalized response data
-setData | `React.Dispatch<React.SetStateAction<any>>` | - | Function to manipulate "data" state
-fetch | `() => void` | - | Function to make the api call. General usecase is to call this function on retry if initial api request fails (`fetched="ERROR"`)
+| keys    | Type                                        | Default   | Description                                                                                                                       |
+| ------- | ------------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| fetched | `Fetched`                                   | `"FALSE"` | Tells at what state the api call is in. One of `"FALSE" | "FETCHING" | "ERROR" | "TRUE"`                                          |
+| data    | `any`                                       | `null`    | Response data or normalized response data                                                                                         |
+| setData | `React.Dispatch<React.SetStateAction<any>>` | -         | Function to manipulate "data" state                                                                                               |
+| fetch   | `() => void`                                | -         | Function to make the api call. General usecase is to call this function on retry if initial api request fails (`fetched="ERROR"`) |
 
 #### Basic Usage
 
@@ -582,6 +584,7 @@ export default {
     // ...other apis
 }
 ```
+
 ```js
 // MyComponent.js
 // ...
@@ -619,7 +622,9 @@ export default ( props ) => {
 ```
 
 ## Factories
+
 ### ReduxActionConstants
+
 Constructor that create a set of strings that can be used as Redux Action Types.
 
 #### usage
@@ -627,9 +632,9 @@ Constructor that create a set of strings that can be used as Redux Action Types.
 ```js
 // books.actions.js
 // ...
-const BOOKS = new ReduxActionConstants( "books" );
+const BOOKS = new ReduxActionConstants("books");
 
-console.log( BOOKS );
+console.log(BOOKS);
 // output
 // {
 //     ENTITY: "BOOKS",
@@ -644,76 +649,73 @@ console.log( BOOKS );
 //     RESET: "[BOOKS] RESET"
 // }
 
-const reducer_setBooks = ( books ) => ( {
+const reducer_setBooks = books => ({
     type: BOOKS.SET,
     payload: {
-        books
-    }
-} );
+        books,
+    },
+});
 
-export {
-    reducer_setBooks,
-    BOOKS
-}
+export { reducer_setBooks, BOOKS };
 ```
+
 ```js
 // books.reducer.js
 import BOOKS from "./books.actions.js";
 // ...
 
 const initialState = {
-    books: []
+    books: [],
 };
 
-const booksReducer = ( state=initialState, action ) => {
-    switch(action.type) {
+const booksReducer = (state = initialState, action) => {
+    switch (action.type) {
         case BOOKS.SET: {
             const { books } = action.payload;
             return {
                 ...state,
-                books: books
-            }
+                books: books,
+            };
         }
-        default: return state;
+        default:
+            return state;
     }
 };
 
-export {
-    booksReducer,
-    initialState as booksInit
-}
+export { booksReducer, initialState as booksInit };
 ```
 
 ### Service
+
 Constructor that can be used with `buildClient` to assist with cancelling a request.
 
 #### Usage
+
 ```js
 // books.service.js
 // ...
 
-const client = buildClient( {
-    baseURL: "http://localhost:8000"
-} );
+const client = buildClient({
+    baseURL: "http://localhost:8000",
+});
 
 class Books extends Service {
-    get () {
+    get() {
         const { cancelToken, canceler } = this.generateCancelToken();
         return [
-            client.get( "api/books", {
-                cancelToken
-            } ),
-            canceler
+            client.get("api/books", {
+                cancelToken,
+            }),
+            canceler,
         ];
     }
 }
 
 const BOOKS = new Books();
 
-export {
-    BOOKS
-};
+export { BOOKS };
 ```
+
 ```js
 // index.js
 // ...
@@ -721,16 +723,18 @@ export {
 try {
     const [promise, canceler] = BOOKS.get();
 
-    promise.then( res => {
-        // then block
-    } ).catch( error => { 
-        // catch block
-    } )
-} catch ( e ) {
-    if ( BOOKS.isCancel( e ) ) {
-        return console.log( "Request Canceled" );
-    };
-    console.log( e );
+    promise
+        .then(res => {
+            // then block
+        })
+        .catch(error => {
+            // catch block
+        });
+} catch (e) {
+    if (BOOKS.isCancel(e)) {
+        return console.log("Request Canceled");
+    }
+    console.log(e);
 }
 
 //... some where else in the code, to cancel the request
@@ -739,18 +743,20 @@ canceler();
 // ...
 ```
 
-
 ## Component Creators
+
 ### createFormError
+
 Create "FormError" component, that can be instantiated elsewhere. Returns a react component
 
 #### createFormError options
 
-option | Type | Default | Required (or) Optional | Description 
---------|-------|---------|--------------------------|--------------
-icon | `React.ReactNode` | `undefined` | Required | icon node.
+| option | Type              | Default     | Required (or) Optional | Description |
+| ------ | ----------------- | ----------- | ---------------------- | ----------- |
+| icon   | `React.ReactNode` | `undefined` | Required               | icon node.  |
 
 Example for `icon` option,
+
 ```html
 <!-- fa icons -->
 <i className="fa fa-exclamation-triangle" aria-hidden="true"></i>
@@ -760,22 +766,24 @@ Example for `icon` option,
 
 #### FormError props
 
-prop name | Type | Default | Required (or) Optional | Description 
---------|-------|---------|--------------------------|--------------
-touched | `boolean` | `undefined` | Optional | Boolean which tells whether the form field for focused or not
-error | `string` | `undefined` | Optional | String which contains error message
-align | <code>"start" &#124; "center" &#124; "end"</code> | `"start"` | Optional | allignment of the error message
+| prop name | Type                                              | Default     | Required (or) Optional | Description                                                   |
+| --------- | ------------------------------------------------- | ----------- | ---------------------- | ------------------------------------------------------------- |
+| touched   | `boolean`                                         | `undefined` | Optional               | Boolean which tells whether the form field for focused or not |
+| error     | `string`                                          | `undefined` | Optional               | String which contains error message                           |
+| align     | <code>"start" &#124; "center" &#124; "end"</code> | `"start"`   | Optional               | allignment of the error message                               |
 
 #### Basic usage
+
 ```js
 // FormError.js
 // ...
 import { createFormError } from "@ssbdev/react-web-utilities";
 
-export const FormError = createFormError( {
-   icon: <i className="warning"></i>
-} );
+export const FormError = createFormError({
+    icon: <i className="warning"></i>,
+});
 ```
+
 ```js
 // MyForm.js
 import { FormError } from "./FormError.js";
@@ -790,7 +798,7 @@ export default () => {
             <div className="field">
                 <label>My Input</label>
                 <input />
-                <FormError 
+                <FormError
                     ...
                 />
             </div>
@@ -801,18 +809,20 @@ export default () => {
 ```
 
 ### createBreadcrumb
+
 Create "Breadcrumb" navigation component, that can be instantiated elsewhere. Returns a react component.
 
 #### createBreadcrumb options
 
-option | Type | Default | Required (or) Optional | Description 
---------|-------|---------|--------------------------|--------------
-defaultIcon | `React.ReactNode` | `undefined` | Required | icon node.
-activeLinkClass | `string` | `"breadcrumb--active"` | Optional | ClassName given to active crumb link
-inactiveLinkClass | `string` | `"breadcrumb--anchor"` | Optional | ClassName given to inactive crumb link
-iconWrapperClass | `string` | `"breadcrumb--icon-wrapper"` | Optional |ClassName given for each seperator icon-wrapper
+| option            | Type              | Default                      | Required (or) Optional | Description                                     |
+| ----------------- | ----------------- | ---------------------------- | ---------------------- | ----------------------------------------------- |
+| defaultIcon       | `React.ReactNode` | `undefined`                  | Required               | icon node.                                      |
+| activeLinkClass   | `string`          | `"breadcrumb--active"`       | Optional               | ClassName given to active crumb link            |
+| inactiveLinkClass | `string`          | `"breadcrumb--anchor"`       | Optional               | ClassName given to inactive crumb link          |
+| iconWrapperClass  | `string`          | `"breadcrumb--icon-wrapper"` | Optional               | ClassName given for each seperator icon-wrapper |
 
 Example for `icon` option,
+
 ```html
 <!-- fa icons -->
 <i className="fa fa-exclamation-triangle" aria-hidden="true"></i>
@@ -842,44 +852,45 @@ Custom styles - Append to **existing classes** as shown below (or) provide **ove
 
 #### Breadcrumb props
 
-prop name | Type | Default | Required (or) Optional | Description 
-------------|-------|---------|--------------------------|--------------
-crumbs | [`CrumbType`](#crumbtype)`[]` | `undefined` | Required | crumb details passed along with **routeProps**. \***Note*:** Avaliable in RouteComponentProps only when used in components rendred by "Routes" component
-icon | `React.ReactNode` | defaultIcon | Optional | override defaultIcon
+| prop name | Type                          | Default     | Required (or) Optional | Description                                                                                                                                               |
+| --------- | ----------------------------- | ----------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| crumbs    | [`CrumbType`](#crumbtype)`[]` | `undefined` | Required               | crumb details passed along with **routeProps**. \***Note\*:** Avaliable in RouteComponentProps only when used in components rendred by "Routes" component |
+| icon      | `React.ReactNode`             | defaultIcon | Optional               | override defaultIcon                                                                                                                                      |
 
 #### CrumbType
-key name | Type | Description 
-------------|-------|--------------
-key | `string` | unique key
-content | `string` | Content that identifies the the path
-active | `boolean` | Indicates whether the path visited is this path or not
-href | `string` | path
+
+| key name | Type      | Description                                            |
+| -------- | --------- | ------------------------------------------------------ |
+| key      | `string`  | unique key                                             |
+| content  | `string`  | Content that identifies the the path                   |
+| active   | `boolean` | Indicates whether the path visited is this path or not |
+| href     | `string`  | path                                                   |
 
 #### Basic usage
+
 ```js
 // Breadcrumb.js
 // ...
 import { createBreadcrumb } from "@ssbdev/react-web-utilities";
-import '@ssbdev/react-web-utilities/build/styles/components/Breadcrumb.min.css';
+import "@ssbdev/react-web-utilities/build/styles/components/Breadcrumb.min.css";
 
-export const Breadcrumb = createBreadcrumb( {
-    icon: <i className="angle right"></i>
-} );
+export const Breadcrumb = createBreadcrumb({
+    icon: <i className="angle right"></i>,
+});
 ```
+
 ```js
 // MyRouteComponent.js
 import { Breadcrumb } from "./Breadcrumb.js";
 // ...
 
-export default ( props ) => {
+export default props => {
     const { crumbs } = props;
 
     return (
         <div className="flex col">
-            <Breadcrumb crumbs={ crumbs } />
-            <div>
-                AuthorInfo
-            </div>
+            <Breadcrumb crumbs={crumbs} />
+            <div>AuthorInfo</div>
         </div>
     );
 };
@@ -890,5 +901,3 @@ export default ( props ) => {
 © Sanath Sharma
 
 Licensed under [MIT License](LICENSE)
-
-

@@ -220,14 +220,15 @@ const buildClient = function <
     instance.interceptors.request.use(
         ( req ) => onRequestFulfilled?.( req, instance ) ?? req,
         async ( e ) => {
+            let err;
             if ( isFunction( onRequestRejected ) ) {
-                let err = onRequestRejected( e, instance );
+                err = onRequestRejected( e, instance );
                 if ( isPromise( err ) ) err = await err;
 
                 // do not reject if error not returned
                 if ( !err ) return;
             }
-            Promise.reject( e );
+            return Promise.reject( err ?? e );
         }
     );
 
@@ -235,18 +236,19 @@ const buildClient = function <
     instance.interceptors.response.use(
         ( res ) => onResponseFulfilled?.( res, instance ) ?? res,
         async ( e ) => {
+            let err;
             if ( isFunction( onResponseRejected ) ) {
-                let err = onResponseRejected( e, instance );
+                err = onResponseRejected( e, instance );
                 if ( isPromise( err ) ) err = await err;
 
                 // do not reject if error not returned
                 if ( !err ) return;
             }
-            Promise.reject( e );
+            return Promise.reject( err ?? e );
         }
     );
 
-    return Object.assign( {}, instance, { generateCancelToken, isCancel: Axios.isCancel }, custom );
+    return Object.assign( instance, { generateCancelToken, isCancel: Axios.isCancel }, custom );
 };
 
 // ---------------------------------------------------------------------------------------

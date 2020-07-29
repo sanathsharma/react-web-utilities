@@ -181,14 +181,15 @@ class BuildClientWithCanceler {
         this.instance.interceptors.request.use(
             ( req ) => onRequestFulfilled?.( req, this.instance ) ?? req,
             async ( e ) => {
+                let err;
                 if ( isFunction( onRequestRejected ) ) {
-                    let err = onRequestRejected( e, this.instance );
+                    err = onRequestRejected( e, this.instance );
                     if ( isPromise( err ) ) err = await err;
 
                     // do not reject if error not returned
                     if ( !err ) return;
                 }
-                Promise.reject( e );
+                return Promise.reject( err ?? e );
             }
         );
 
@@ -196,14 +197,15 @@ class BuildClientWithCanceler {
         this.instance.interceptors.response.use(
             ( res ) => onResponseFulfilled?.( res, this.instance ) ?? res,
             async ( e ) => {
+                let err;
                 if ( isFunction( onResponseRejected ) ) {
-                    let err = onResponseRejected( e, this.instance );
+                    err = onResponseRejected( e, this.instance );
                     if ( isPromise( err ) ) err = await err;
 
                     // do not reject if error not returned
                     if ( !err ) return;
                 }
-                Promise.reject( e );
+                return Promise.reject( err ?? e );
             }
         );
 
